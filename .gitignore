@@ -1,0 +1,89 @@
+# ---------------------------------------------------------------------------
+# Repo-wide ignores. The frontend keeps its own .gitignore for Node/Vite rules.
+# ---------------------------------------------------------------------------
+
+# --- Secrets -----------------------------------------------------------------
+# Every .env variant is ignored; the committed *.example files document the keys.
+.env
+.env.*
+*.local
+!.env.example
+!*.env.example
+
+# Service-account / key material, in case one is ever dropped in the tree
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- Build artifacts ---------------------------------------------------------
+build/
+dist/
+
+# --- Agent output ------------------------------------------------------------
+# Briefs are uploaded to Supabase Storage; anything written to disk is scratch.
+backend/output/
+output/
+*.tmp
+
+# --- Editors -----------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*.sw?
+*.bak
+
+# --- Local tooling -----------------------------------------------------------
+# Claude Code's per-machine settings. CLAUDE.md is committed on purpose; this
+# file holds local permissions and never belongs in the repo.
+.claude/settings.local.json
+
+# --- Operating system --------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+*.lnk
+
+# OneDrive drops these beside synced folders
+desktop.ini
+
+# Word/Office lock files — relevant here because the agent generates .docx
+~$*
+
+# --- Logs --------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

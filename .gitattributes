@@ -1,0 +1,41 @@
+# Normalise line endings. Without this, files authored on Windows are committed
+# with CRLF and every Linux/macOS collaborator (and CI) sees whole-file diffs.
+# Git stores LF; Windows checkouts still get CRLF in the working tree.
+* text=auto eol=lf
+
+# Explicit for the file types in this repo
+*.py      text eol=lf
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.js      text eol=lf
+*.json    text eol=lf
+*.css     text eol=lf
+*.html    text eol=lf
+*.md      text eol=lf
+*.txt     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.sql     text eol=lf
+.env.example text eol=lf
+
+# Windows-only scripts must keep CRLF or they break
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# Binary — never convert, never diff as text
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.pdf     binary
+*.docx    binary
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
+
+# Generated / vendored files: collapsed in PR diffs and excluded from language stats
+package-lock.json    linguist-generated=true -diff
+backend/assets/fonts/** linguist-vendored=true

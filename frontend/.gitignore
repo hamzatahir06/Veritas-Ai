@@ -1,0 +1,48 @@
+# Frontend-only ignores. Repo-wide rules (secrets, OS junk, editors) live in
+# the root .gitignore; this file is kept self-contained enough that the app
+# still ignores the right things if it is ever split into its own repo.
+
+# --- Dependencies ------------------------------------------------------------
+node_modules/
+.pnp
+.pnp.js
+
+# --- Build output ------------------------------------------------------------
+dist/
+dist-ssr/
+build/
+
+# Vite / TypeScript incremental caches
+.vite/
+*.tsbuildinfo
+
+# --- Secrets -----------------------------------------------------------------
+# Vite exposes every VITE_* var to the browser bundle, so a leaked .env here
+# leaks whatever is in it. Only the .example file is committed.
+.env
+.env.*
+*.local
+!.env.example
+
+# --- Test coverage -----------------------------------------------------------
+coverage/
+
+# --- Logs --------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Editors -----------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
