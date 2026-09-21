@@ -5,7 +5,7 @@
 Give it a topic. It decides how many times to search, ranks sources by authority, and delivers a fully cited research brief — live, in real time, as it thinks.
 
 [![Live Demo](https://img.shields.io/badge/demo-live-6EC6B8?style=for-the-badge)](https://veritas-ai-smoky.vercel.app)
-[![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -27,6 +27,7 @@ That decision-making — not the API call — is the actual engineering problem 
 | | |
 |---|---|
 | 🔎 **Autonomous multi-search loop** | The agent plans its own queries and judges when it has enough — calibrated so trivial questions get one search and broad topics get several, never the reverse |
+| 🎓 **Web + scholarly search** | Two tools the agent picks between per query: Tavily for the live web, OpenAlex for peer-reviewed literature — so a science question gets papers, not just blog posts |
 | 🛡️ **Dual-provider resilience** | Gemini 3.5 Flash primary, Groq (`gpt-oss-120b`) fallback — a rate limit, an outage, or a deprecated model on one provider falls through to the other automatically, mid-run |
 | 🏛️ **Source authority ranking** | Results are weighted by domain trust (official / government / academic > major outlets > social / forums) *and* relevance score — done deterministically in code, not left to chance |
 | 📡 **Live streaming, not a spinner** | Every search the agent runs streams to the screen in real time over SSE — you watch it think, not wait on a black box |
@@ -37,10 +38,14 @@ That decision-making — not the API call — is the actual engineering problem 
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐      SSE stream       ┌──────────────┐      web_search      ┌─────────┐
-│   React     │  ──────────────────▶  │   FastAPI    │  ──────────────────▶ │ Tavily  │
-│  (Vercel)   │  ◀────────────────── │   (Render)    │  ◀────────────────── │(ranked) │
-└─────────────┘    live progress      └───────┬──────┘    scored results    └─────────┘
+┌─────────────┐      SSE stream       ┌──────────────┐      web_search      ┌──────────┐
+│   React     │  ──────────────────▶  │   FastAPI    │  ──────────────────▶ │  Tavily  │
+│  (Vercel)   │  ◀────────────────── │   (Render)    │  ◀────────────────── │ (ranked) │
+└─────────────┘    live progress      └───────┬──────┘    scored results    └──────────┘
+                                               │  scholarly_search         ┌──────────┐
+                                               ├─────────────────────────▶ │ OpenAlex │
+                                               │ ◀──────────────────────── │ (papers) │
+                                               │   peer-reviewed works      └──────────┘
                                                │
                                    decide → search → decide
                                                │
@@ -59,7 +64,7 @@ The agent's core loop (`agent/core.py`) never imports FastAPI — it's plain Pyt
 
 ## 🧰 Tech Stack
 
-**Backend** — Python · FastAPI · Server-Sent Events · `google-genai` · `openai` (Groq-compatible) · `tavily-python` · `python-docx` · `fpdf2`
+**Backend** — Python · FastAPI · Server-Sent Events · `google-genai` · `openai` (Groq-compatible) · `tavily-python` · OpenAlex API · `python-docx` · `fpdf2`
 
 **Frontend** — React · Vite · TypeScript · Tailwind CSS v4 · React Router · `react-markdown`
 
@@ -184,6 +189,8 @@ veritas-ai/
 │   │   ├── core.py       # decide → search → decide, with provider fallback
 │   │   ├── classifier.py # cheap intent check: real research vs. small talk
 │   │   ├── tools.py      # Tavily search + authority/relevance ranking
+│   │   ├── openalex.py   # scholarly search over peer-reviewed literature (no key)
+│   │   ├── toolset.py    # tool schemas + dispatch for the provider loops
 │   │   └── prompts.py
 │   ├── api/           # FastAPI routes (SSE research endpoint, projects, sources)
 │   ├── core/           # config + Supabase auth verification
