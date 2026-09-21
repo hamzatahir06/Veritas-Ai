@@ -1,190 +1,211 @@
-# Veritas AI — Research Brief Agent
+# 🔍 Veritas AI
 
-Give it a topic. It searches the web and the peer-reviewed literature, decides for itself how
-much digging the question deserves, and streams back a cited research brief — live, as it works.
+**An autonomous research agent that searches, verifies, and writes — so you don't have to.**
 
-Briefs come out with IEEE numbered citations at the claim, a full source list, and a
-publication-formatted PDF and Word document.
+Give it a topic. It decides how many times to search, ranks sources by authority, and delivers a fully cited research brief — live, in real time, as it thinks.
+
+[![Live Demo](https://img.shields.io/badge/demo-live-6EC6B8?style=for-the-badge)](https://veritas-ai-smoky.vercel.app)
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 ---
 
-## How it works
+## 🧠 What it actually does
+
+Most "AI research tools" are a single prompt wrapped around a single search call. Veritas AI isn't — it's a genuine **agent**: it decides on its own how many searches a topic needs, when it has enough to write confidently, and where to look first.
+
+- Ask it something trivial ("who is the CEO of Tesla") → it runs **one** targeted search and stops.
+- Ask it something broad ("recent breakthroughs in solid-state batteries") → it runs **multiple angled searches**, avoids redundant ones, and only stops once coverage is genuinely solid.
+- Say "hey" instead of asking a real question → it recognizes that and just replies, without spending a single search.
+
+That decision-making — not the API call — is the actual engineering problem this project solves.
+
+## ✨ Features
+
+| | |
+|---|---|
+| 🔎 **Autonomous multi-search loop** | The agent plans its own queries and judges when it has enough — calibrated so trivial questions get one search and broad topics get several, never the reverse |
+| 🛡️ **Dual-provider resilience** | Gemini 3.5 Flash primary, Groq (`gpt-oss-120b`) fallback — a rate limit, an outage, or a deprecated model on one provider falls through to the other automatically, mid-run |
+| 🏛️ **Source authority ranking** | Results are weighted by domain trust (official / government / academic > major outlets > social / forums) *and* relevance score — done deterministically in code, not left to chance |
+| 📡 **Live streaming, not a spinner** | Every search the agent runs streams to the screen in real time over SSE — you watch it think, not wait on a black box |
+| 📄 **Real, cited output** | Every finished brief exports as a properly formatted **.docx** and **.pdf** — real headings, tables, bold text, and a hyperlinked source list built from actual search results, never invented |
+| 💬 **Persistent, chat-style threads** | Signed-in research is saved as a Project, not lost on refresh — browse past research from the sidebar anytime |
+| 🔐 **Zero-friction auth** | One-click Google sign-in via Supabase — no passwords, no OTP, no inbox-checking |
+
+## 🏗️ Architecture
 
 ```
-topic ──▶ classifier ──▶ agentic search loop ──▶ brief ──▶ PDF + .docx
-          (research?)     web + scholarly         SSE stream
+┌─────────────┐      SSE stream       ┌──────────────┐      web_search      ┌─────────┐
+│   React     │  ──────────────────▶  │   FastAPI    │  ──────────────────▶ │ Tavily  │
+│  (Vercel)   │  ◀────────────────── │   (Render)    │  ◀────────────────── │(ranked) │
+└─────────────┘    live progress      └───────┬──────┘    scored results    └─────────┘
+                                               │
+                                   decide → search → decide
+                                               │
+                                   ┌───────────┴───────────┐
+                                   │   Gemini 3.5 Flash      │  primary
+                                   │   Groq gpt-oss-120b     │  fallback
+                                   └────────────┬────────────┘
+                                                │
+                                   ┌────────────┴────────────┐
+                                   │        Supabase          │
+                                   │ Postgres · Auth · Storage │
+                                   └───────────────────────────┘
 ```
 
-1. **Classifier gate.** A cheap model call decides whether the input is a research request or
-   just conversation. Chat gets a reply and stops there — no search budget is spent on it.
-2. **Agentic search loop.** The model chooses its own queries and calls two tools until it can
-   answer: `web_search` (Tavily) for news, official and government sources, and
-   `scholarly_search` (OpenAlex) for journal articles, conference papers and preprints. It
-   decides how many searches the question is worth, up to a hard ceiling of five.
-3. **Ranking happens in code, not in the model.** Results are filtered by relevance score, then
-   reweighted by domain authority — government and academic domains up, wire services and major
-   outlets next, social and SEO-blog domains down, a few near-zero-signal domains excluded
-   outright. Source quality is a deterministic judgment, so it doesn't cost a model call.
-4. **Live streaming.** Every step is pushed to the browser over Server-Sent Events, so you watch
-   the searches happen instead of staring at a spinner.
-5. **Documents.** For signed-in users the finished brief is saved and rendered to a formatted PDF
-   and .docx — US Letter, 1" margins, numbered sections, IEEE reference list, page numbers, and a
-   table of contents on longer briefs.
+The agent's core loop (`agent/core.py`) never imports FastAPI — it's plain Python generators, so it's equally callable from the API, a CLI script, or a future background job with zero rewrite.
 
-**Provider fallback is built in.** The agent walks a chain of models and falls through to the
-next one on any failure, emitting a `provider_failed` event as it goes. A single provider having
-a bad day degrades the run; it doesn't end it.
+## 🧰 Tech Stack
 
-**Guests can use it.** No account needed to run a brief and read it. Signing in is what persists
-it and unlocks the downloads — a guest run writes nothing to the database.
+**Backend** — Python · FastAPI · Server-Sent Events · `google-genai` · `openai` (Groq-compatible) · `tavily-python` · `python-docx` · `fpdf2`
 
----
+**Frontend** — React · Vite · TypeScript · Tailwind CSS v4 · React Router · `react-markdown`
 
-## Stack
+**Infrastructure** — Supabase (Postgres, Google OAuth, Storage) · Render (backend) · Vercel (frontend)
 
-| Layer       | Built with                                                              |
-| ----------- | ----------------------------------------------------------------------- |
-| Backend     | Python 3.10+, FastAPI, Uvicorn, Pydantic                                |
-| AI          | Gemini (`google-genai`) primary, Groq fallback                          |
-| Search      | Tavily (web) · OpenAlex (scholarly, no API key needed)                  |
-| Documents   | fpdf2 (PDF, embedded Noto Serif) · python-docx (Word)                   |
-| Frontend    | React 19, TypeScript, Vite, Tailwind v4, React Router v7                |
-| Data / auth | Supabase — Postgres with row-level security, Storage, Google OAuth      |
+## 🚀 Getting started
 
----
+### 1. Clone
+```bash
+git clone https://github.com/hamzatahir06/veritas-ai.git
+cd veritas-ai
+```
 
-## Running it locally
+### 2. Database (Supabase)
+Create a free project at [supabase.com](https://supabase.com), enable the Google provider under **Authentication**, then run this in the SQL editor:
 
-You'll need Python 3.10+, Node 18+, and a Supabase project.
+```sql
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  created_at timestamptz not null default now()
+);
 
-### 1. Backend
+create table public.projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  topic text not null,
+  title text not null,
+  status text not null default 'pending' check (status in ('pending','running','completed','failed')),
+  markdown text,
+  docx_path text,
+  pdf_path text,
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
 
+create table public.sources (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  query text not null,
+  title text,
+  url text not null,
+  snippet text,
+  created_at timestamptz not null default now()
+);
+
+create table public.waitlist (
+  id uuid primary key default gen_random_uuid(),
+  email text not null unique,
+  created_at timestamptz not null default now()
+);
+
+create function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email) values (new.id, new.email);
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+alter table public.profiles enable row level security;
+alter table public.projects enable row level security;
+alter table public.sources enable row level security;
+alter table public.waitlist enable row level security;
+
+create policy "own profile" on public.profiles for select using (auth.uid() = id);
+create policy "own projects select" on public.projects for select using (auth.uid() = user_id);
+create policy "own projects insert" on public.projects for insert with check (auth.uid() = user_id);
+create policy "own sources" on public.sources for select using (
+  exists (select 1 from public.projects p where p.id = sources.project_id and p.user_id = auth.uid())
+);
+create policy "anyone can join the waitlist" on public.waitlist for insert with check (true);
+```
+
+Also create a **private** Storage bucket named `documents`.
+
+### 3. Backend
 ```bash
 cd backend
+python -m venv venv
+venv\Scripts\activate        # Windows — use source venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
 ```
-
-Create `backend/.env` (see `backend/.env.example`):
-
-```ini
-SUPABASE_URL=https://<your-project>.supabase.co
-SUPABASE_SERVICE_KEY=<service role key>
-GEMINI_API_KEY=<key>            # ai.google.dev
-TAVILY_API_KEY=<key>            # tavily.com
-GROQ_API_KEY=<key>              # optional — the fallback provider
-FRONTEND_ORIGIN=http://localhost:5173   # comma-separated for more than one
+Create `backend/.env`:
 ```
-
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+GEMINI_API_KEY=
+TAVILY_API_KEY=
+GROQ_API_KEY=
+FRONTEND_ORIGIN=http://localhost:5173
+```
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-API docs at `http://127.0.0.1:8000/docs`.
-
-### 2. Frontend
-
+### 4. Frontend
 ```bash
 cd frontend
 npm install
 ```
-
-Create `frontend/.env` (see `frontend/.env.example`):
-
-```ini
-VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon public key>
+Create `frontend/.env`:
+```
 VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 ```
-
 ```bash
-npm run dev          # http://localhost:5173
-npm run build        # type-check + production build
-npm run lint
+npm run dev
 ```
 
-Note the two different Supabase keys: the backend uses the **service role** key and must never
-expose it; the browser only ever gets the **anon** key.
-
----
-
-## API
-
-| Method   | Route                                    | Auth     |
-| -------- | ---------------------------------------- | -------- |
-| `POST`   | `/api/research`                          | optional |
-| `GET`    | `/api/projects`                          | required |
-| `GET`    | `/api/projects/{id}`                     | required |
-| `DELETE` | `/api/projects/{id}`                     | required |
-| `GET`    | `/api/projects/{id}/download/{format}`   | required |
-| `GET`    | `/api/sources`                           | required |
-| `GET`    | `/api/me`                                | required |
-| `POST`   | `/api/waitlist`                          | optional |
-| `GET`    | `/api/health`                            | public   |
-
-`POST /api/research` returns a `text/event-stream`. The event types are:
-
-| Event             | Meaning                                                   |
-| ----------------- | --------------------------------------------------------- |
-| `chat_reply`      | Input wasn't research — here's a reply, stream ends        |
-| `searching`       | A query just went out                                      |
-| `found`           | Results came back, with their sources                      |
-| `limit_reached`   | Search budget spent; writing the brief now                 |
-| `provider_failed` | A model provider failed; falling through to the next       |
-| `save_failed`     | The brief is fine, persisting it wasn't — stream continues |
-| `done`            | Finished: brief, sources, project id                       |
-| `error`           | Fatal                                                      |
-
----
-
-## Layout
+## 📁 Project structure
 
 ```
-backend/
-  main.py                    app init, CORS
-  api/routes.py              all endpoints + SSE streaming
-  core/                      config (pydantic-settings), auth, Supabase client
-  agent/
-    core.py                  run_research() — the provider loop (no FastAPI or Supabase imports,
-                             so it can be driven from a CLI or worker just as well)
-    classifier.py            research-vs-chat gate
-    tools.py                 Tavily search + the authority ranking
-    openalex.py              scholarly search
-    toolset.py               tool schemas and dispatch
-    prompts.py               the Veritas AI system prompt
-  services/
-    storage.py               Supabase persistence
-    document_common.py       markdown → blocks, shared by both writers
-    document_theme.py        shared design tokens
-    pdf_writer.py            blocks → PDF
-    docx_writer.py           blocks → .docx
-    brief_review.py          deterministic quality checks (no model call)
-  assets/fonts/              Noto Serif (OFL) + DejaVu Sans (Bitstream Vera), embedded in PDFs
-
-frontend/src/
-  pages/                     Home · Projects · ProjectDetail · Sources · Pricing
-  components/                shell/ · research/ · landing/
-  hooks/                     useAuth · useResearchThread
-  lib/                       api.ts (SSE parsing) · supabase.ts · projects.ts
+veritas-ai/
+├── backend/
+│   ├── agent/        # the research loop itself — model-agnostic, framework-agnostic
+│   │   ├── core.py       # decide → search → decide, with provider fallback
+│   │   ├── classifier.py # cheap intent check: real research vs. small talk
+│   │   ├── tools.py      # Tavily search + authority/relevance ranking
+│   │   └── prompts.py
+│   ├── api/           # FastAPI routes (SSE research endpoint, projects, sources)
+│   ├── core/           # config + Supabase auth verification
+│   └── services/       # docx/pdf generation, Supabase persistence
+└── frontend/
+    └── src/
+        ├── components/  # landing, research, shell, ui
+        ├── hooks/        # useAuth, useResearchThread
+        ├── lib/          # api client (SSE reader), Supabase client
+        └── pages/        # Home, Projects, ProjectDetail, Sources
 ```
 
----
+## 🗺️ Roadmap
 
-## Notes
+- [ ] Elite Plan — priced tier beyond the current waitlist
+- [ ] Settings page (intentionally out of scope for v1)
+- [ ] Configurable search depth per request
 
-- Free-tier API limits are the real constraint on how much this can run: Tavily gives 1,000
-  credits a month and an advanced search costs 2, while the Gemini models have separate per-day
-  request quotas — which is why the provider chain exists and why the search budget is capped.
-- The PDF embeds Noto Serif (SIL Open Font License, vendored in `backend/assets/fonts/`), with
-  DejaVu Sans (Bitstream Vera license) registered as a fallback for the few math glyphs Noto's
-  Latin subset omits. Word documents reference Cambria by name, since a .docx links fonts rather
-  than embedding them.
+## 👤 Author
 
----
+**Hamza Tahir** — Software Engineering student building agentic AI systems.
 
-## License
+## 📄 License
 
-[MIT](LICENSE) — © 2026 Hamza Tahir.
-
-The fonts vendored in `backend/assets/fonts/` are third-party works under their own licenses,
-which the MIT grant does not cover. Terms and full license texts are in
-[`backend/assets/fonts/README.md`](backend/assets/fonts/README.md).
+MIT — see [LICENSE](LICENSE).
