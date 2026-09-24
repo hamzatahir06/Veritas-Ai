@@ -6,7 +6,7 @@ const CONTACT_EMAIL = 'hamzatahir.dev.ai@gmail.com'
 const WHATSAPP_DISPLAY = '0332-7172044'
 // wa.me wants the international form: country code (92) + number without the leading 0.
 const WHATSAPP_URL = 'https://wa.me/923327172044'
-const REPO_URL = 'https://github.com/hamzatahir06/veritas-ai'
+const REPO_URL = 'https://github.com/hamzatahir06/Veritas-Ai'
 
 type FooterLink = { label: string; to: string; external?: boolean }
 
@@ -132,7 +132,7 @@ export default function Footer({ isSignedIn }: { isSignedIn: boolean }) {
                 WhatsApp · {WHATSAPP_DISPLAY}
               </ContactRow>
               <ContactRow icon="github" href={REPO_URL}>
-                hamzatahir06/veritas-ai
+                hamzatahir06/Veritas-Ai
               </ContactRow>
             </div>
           </div>

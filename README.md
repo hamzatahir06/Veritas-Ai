@@ -74,7 +74,7 @@ The agent's core loop (`agent/core.py`) never imports FastAPI — it's plain Pyt
 
 ### 1. Clone
 ```bash
-git clone https://github.com/hamzatahir06/veritas-ai.git
+git clone https://github.com/hamzatahir06/Veritas-Ai.git
 cd veritas-ai
 ```
 
