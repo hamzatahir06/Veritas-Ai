@@ -30,7 +30,22 @@ export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProp
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border-2 border-brand/40 bg-white py-2.5 pr-2.5 pl-4 sm:px-4 sm:py-3 shadow-sm transition-colors focus-within:border-brand">
+    <div className="group relative flex items-center gap-3 rounded-2xl bg-white py-2.5 pr-2.5 pl-4 sm:px-4 sm:py-3 shadow-sm">
+      {/* Border: faded track + brand patches running around it (animation in index.css) */}
+      <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+        <rect width="100%" height="100%" rx="16" fill="none" strokeWidth="2" className="stroke-brand/30 transition-colors group-focus-within:stroke-brand/55" />
+        <rect
+          width="100%"
+          height="100%"
+          rx="16"
+          fill="none"
+          pathLength={70}
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray="7 3"
+          className="prompt-dash stroke-brand"
+        />
+      </svg>
       <input
         ref={inputRef}
         autoFocus
@@ -59,7 +74,7 @@ export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProp
           type="button"
           onClick={handleSubmit}
           aria-label="Start Research"
-          className="ui-chrome flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-brand px-3 py-2.5 sm:px-4 sm:py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="ui-chrome flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-brand px-3 py-2.5 sm:px-4 sm:py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark active:scale-95"
         >
           {/* Solid paper plane (Font Awesome Free, CC BY 4.0) — matches the "Final'e UI" mockup */}
           <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true" className="h-4 w-4 shrink-0">

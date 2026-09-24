@@ -16,6 +16,22 @@
   -webkit-user-select: none;
 }
 
+/* Prompt box border: seven brand-colored patches, evenly spaced, that keep travelling over a
+   faded track so the box reads as live. pathLength=70 on the rect splits the perimeter into 70
+   units whatever its size, so a 10-unit period (7 patch + 3 gap) gives exactly seven patches
+   covering ~70% of the border. */
+.prompt-dash {
+  animation: prompt-dash-run 3.5s linear infinite;
+}
+
+@keyframes prompt-dash-run {
+  to { stroke-dashoffset: -10; } /* one dash period (7 + 3) → seamless loop */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prompt-dash { animation: none; }
+}
+
 .markdown-content h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
 .markdown-content h2 { font-size: 1.15rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
 .markdown-content h3 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
