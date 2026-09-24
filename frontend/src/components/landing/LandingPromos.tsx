@@ -215,7 +215,7 @@ export default function LandingPromos() {
         {/* ---- 2a. TIME-TO-BRIEF ANALYSIS (research-style efficiency panel) ---- */}
         <figure
           ref={analyticsRef}
-          className="mb-2 rounded-2xl border border-black/10 bg-white p-6 shadow-sm sm:p-8"
+          className="mb-2 rounded-2xl border border-black bg-white p-6 shadow-sm sm:p-8"
         >
           <figcaption className="mb-5 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-ink/50">
             <span className="h-1.5 w-1.5 rounded-full bg-brand" />
@@ -242,7 +242,7 @@ export default function LandingPromos() {
           </div>
 
           {/* Supporting metrics */}
-          <div className="mt-7 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-black/10 bg-black/10 text-center">
+          <div className="mt-7 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-black bg-black text-center">
             {BRIEF_METRICS.map(([figure, caption]) => (
               <div key={figure} className="bg-white px-2 py-4 sm:px-3">
                 <div className="font-serif text-xl font-bold tabular-nums text-ink sm:text-2xl">{figure}</div>
