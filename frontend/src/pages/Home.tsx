@@ -7,6 +7,7 @@ import WelcomeGreeting from '../components/research/WelcomeGreeting'
 import SuggestedTopics from '../components/research/SuggestedTopics'
 import StreamingProgress from '../components/research/StreamingProgress'
 import ResultView from '../components/research/ResultView'
+import Footer from '../components/shell/Footer'
 import { useResearchThread } from '../hooks/useResearchThread'
 
 type ContextType = { isSignedIn: boolean; accessToken?: string }
@@ -48,8 +49,8 @@ export default function Home() {
   // --- INITIAL VIEW (Empty State) ---
   if (!hasStarted) {
     return (
-      <div ref={scrollRef} className="flex h-full flex-col items-center overflow-y-auto px-4 py-6">
-        <div className="flex w-full max-w-4xl flex-col items-center gap-5">
+      <div ref={scrollRef} className="flex h-full flex-col overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center gap-5 px-4 py-6">
           {/* Top Hero: Brain Box for logged-out users */}
           {!isSignedIn ? (
             <HeroBanner />
@@ -67,6 +68,7 @@ export default function Home() {
           {/* Promotional Content (Shown for unauthenticated users on scroll) */}
           {!isSignedIn && <LandingPromos />}
         </div>
+        <Footer isSignedIn={isSignedIn} />
       </div>
     )
   }

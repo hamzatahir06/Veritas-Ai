@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
 import { joinWaitlist } from '../lib/api'
+import Footer from '../components/shell/Footer'
 
 type Ctx = { isSignedIn: boolean; accessToken?: string; user: User | null }
 
@@ -56,8 +57,8 @@ export default function Pricing() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#fafafa] px-4 py-12">
-      <div className="mx-auto max-w-4xl text-center">
+    <div className="flex h-full flex-col overflow-y-auto bg-[#fafafa]">
+      <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 text-center">
         <h1 className="font-serif text-3xl font-bold text-ink sm:text-4xl">
           Research deeper. Export faster.
         </h1>
@@ -69,7 +70,7 @@ export default function Pricing() {
         <div className="mt-12 grid gap-8 text-left md:grid-cols-2 md:items-stretch">
           
           {/* 1. FREE PLAN */}
-          <div className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-8 shadow-xs">
+          <div className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-6 shadow-xs sm:p-8">
             <div>
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-ink">Free Starter</h2>
@@ -108,7 +109,7 @@ export default function Pricing() {
           </div>
 
           {/* 2. PRO PLAN ($9/mo) */}
-          <div className="relative flex flex-col justify-between rounded-2xl border-2 border-brand bg-white p-8 shadow-md">
+          <div className="relative flex flex-col justify-between rounded-2xl border-2 border-brand bg-white p-6 shadow-md sm:p-8">
             {/* Highlight Badge */}
             <div className="absolute -top-3.5 right-6 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
               Most Popular
@@ -216,6 +217,7 @@ export default function Pricing() {
           no card, and we'll email you when it opens.
         </p>
       </div>
+      <Footer isSignedIn={isSignedIn} />
     </div>
   )
 }

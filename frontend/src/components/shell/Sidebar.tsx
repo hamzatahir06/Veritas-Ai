@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import BrandLogo from './BrandLogo'
 
 // SVGs matched to your design: Home, Research Paper (Projects), and Database (Sources)
 const navItems = [
@@ -36,8 +37,8 @@ export default function Sidebar() {
     <aside className="ui-chrome flex h-full w-60 shrink-0 flex-col justify-between border-r border-black/5 bg-white p-4">
       {/* Top Section: Branding & Navigation */}
       <div>
-        <div className="mb-8 px-2 text-xl font-bold tracking-tight text-ink">
-          Veritas AI
+        <div className="mb-8 px-2">
+          <BrandLogo />
         </div>
 
         <nav className="flex flex-col gap-1.5">
