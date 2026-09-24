@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
-import BrandLogo from './BrandLogo'
+import BrandLogo, { LogoMark } from './BrandLogo'
+import ContactMenu from './ContactMenu'
 
 const underline = (
   <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-brand shadow-sm" />
@@ -53,11 +54,12 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
       {/* 1. TOP LEFT: Logo, then nav links (Only when NOT signed in; Sidebar handles nav otherwise) */}
       <div className="flex min-w-0 items-center gap-3 md:gap-10">
         {isSignedIn ? (
-          // Signed in on mobile: the sidebar is a drawer, so the top bar carries the logo.
+          // Signed in on mobile: the sidebar is a drawer, so the top bar carries the logo
+          // (mark only, leaving room for Contact + Upgrade; the drawer shows the full lockup).
           <div className="flex items-center gap-2 md:hidden">
             {menuButton}
-            <Link to="/">
-              <BrandLogo />
+            <Link to="/" aria-label="Veritas AI home">
+              <LogoMark />
             </Link>
           </div>
         ) : (
@@ -82,7 +84,8 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
       {/* 2. TOP RIGHT: Nav Links & Actions */}
       <div className="flex shrink-0 items-center gap-3 md:gap-6">
 
-        {/* SIGNED IN: Solid Brand Button */}
+        {/* SIGNED IN: Contact menu + solid brand Upgrade button */}
+        {isSignedIn && <ContactMenu />}
         {isSignedIn && (
           <Link
             to="/pricing"

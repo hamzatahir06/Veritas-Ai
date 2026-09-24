@@ -217,7 +217,7 @@ export default function Pricing() {
           no card, and we'll email you when it opens.
         </p>
       </div>
-      <Footer isSignedIn={isSignedIn} />
+      {!isSignedIn && <Footer />}
     </div>
   )
 }

@@ -68,7 +68,7 @@ export default function Home() {
           {/* Promotional Content (Shown for unauthenticated users on scroll) */}
           {!isSignedIn && <LandingPromos />}
         </div>
-        <Footer isSignedIn={isSignedIn} />
+        {!isSignedIn && <Footer />}
       </div>
     )
   }
