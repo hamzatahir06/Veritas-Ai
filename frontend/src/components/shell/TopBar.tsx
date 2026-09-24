@@ -81,29 +81,25 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
         )}
       </div>
 
-      {/* 2. TOP RIGHT: Nav Links & Actions */}
+      {/* 2. TOP RIGHT: Actions */}
       <div className="flex shrink-0 items-center gap-3 md:gap-6">
-
-        {/* SIGNED IN: Contact menu + solid brand Upgrade button */}
-        {isSignedIn && <ContactMenu />}
-        {isSignedIn && (
-          <Link
-            to="/pricing"
-            className="rounded-lg bg-brand px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
-          >
-            Upgrade
-          </Link>
-        )}
-
-        {/* Auth Buttons */}
         {isSignedIn ? (
-          <button
-            onClick={onSignOut}
-            title={user?.email ? `Signed in as ${user.email}` : 'Sign out'}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand/20 text-sm font-semibold text-brand-dark hover:bg-brand/30"
-          >
-            {initials}
-          </button>
+          <>
+            <ContactMenu />
+            <Link
+              to="/pricing"
+              className="rounded-lg bg-brand px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
+            >
+              Upgrade
+            </Link>
+            <button
+              onClick={onSignOut}
+              title={user?.email ? `Signed in as ${user.email}` : 'Sign out'}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand/20 text-sm font-semibold text-brand-dark hover:bg-brand/30"
+            >
+              {initials}
+            </button>
+          </>
         ) : (
           <>
             <button
@@ -117,21 +113,24 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
         )}
       </div>
 
-      {/* Signed out, mobile: nav links drop down under the bar */}
+      {/* Signed out, mobile: nav links drop down under the bar; tapping outside closes them */}
       {!isSignedIn && menuOpen && (
-        <nav className="absolute inset-x-0 top-full flex flex-col border-b border-black/5 bg-white px-4 py-2 shadow-lg md:hidden">
-          {navLinks.map(({ label, to, active }) => (
-            <Link
-              key={label}
-              to={to}
-              className={`rounded-lg px-3 py-3 text-base font-semibold transition-colors ${
-                active ? 'bg-brand/10 text-brand-dark' : 'text-ink hover:bg-black/5'
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <>
+          <div onClick={onToggleMenu} className="fixed inset-0 top-16 md:hidden" />
+          <nav className="absolute inset-x-0 top-full flex flex-col border-b border-black/5 bg-white px-4 py-2 shadow-lg md:hidden">
+            {navLinks.map(({ label, to, active }) => (
+              <Link
+                key={label}
+                to={to}
+                className={`rounded-lg px-3 py-3 text-base font-semibold transition-colors ${
+                  active ? 'bg-brand/10 text-brand-dark' : 'text-ink hover:bg-black/5'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </>
       )}
     </header>
   )

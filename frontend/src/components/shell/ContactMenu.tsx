@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ContactIcon, { type ContactIconName } from './ContactIcon'
-import { CONTACT_EMAIL, WHATSAPP_DISPLAY, WHATSAPP_URL } from '../../lib/contact'
+import { CONTACT_EMAIL, WHATSAPP_DISPLAY, WHATSAPP_URL, linkTarget } from '../../lib/contact'
 
 /** One channel: icon + value open it (mailto / WhatsApp); the button on the right copies the value. */
 function ContactRow({ icon, value, href, onOpen }: { icon: ContactIconName; value: string; href: string; onOpen: () => void }) {
@@ -19,10 +19,9 @@ function ContactRow({ icon, value, href, onOpen }: { icon: ContactIconName; valu
   return (
     <div className="flex items-center gap-1">
       <a
-        role="menuitem"
         href={href}
         onClick={onOpen}
-        {...(href.startsWith('http') && { target: '_blank', rel: 'noopener noreferrer' })}
+        {...linkTarget(href)}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-black/5"
       >
         <ContactIcon name={icon} className="h-5 w-5" />
@@ -59,7 +58,6 @@ export default function ContactMenu() {
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        aria-haspopup="menu"
         className="cursor-pointer whitespace-nowrap rounded-lg border-2 border-black bg-white px-3 py-1 text-sm font-medium text-ink transition-colors hover:bg-black/5"
       >
         Contact us
@@ -70,7 +68,6 @@ export default function ContactMenu() {
           {/* Click-away layer */}
           <div className="fixed inset-0 z-40" onClick={close} />
           <div
-            role="menu"
             className="fixed inset-x-4 top-16 z-50 divide-y divide-black/5 rounded-xl border border-black/10 bg-white p-1 shadow-lg sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80"
           >
             <ContactRow icon="mail" value={CONTACT_EMAIL} href={`mailto:${CONTACT_EMAIL}`} onOpen={close} />

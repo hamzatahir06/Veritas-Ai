@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import BrandLogo from './BrandLogo'
 import ContactIcon, { type ContactIconName } from './ContactIcon'
-import { CONTACT_EMAIL, REPO_URL, WHATSAPP_DISPLAY, WHATSAPP_URL } from '../../lib/contact'
+import { CONTACT_EMAIL, REPO_URL, WHATSAPP_DISPLAY, WHATSAPP_URL, linkTarget } from '../../lib/contact'
 
 type FooterLink = { label: string; to: string; external?: boolean }
 
@@ -16,7 +16,7 @@ function Column({ title, links }: { title: string; links: FooterLink[] }) {
         {links.map(({ label, to, external }) => (
           <li key={label}>
             {external ? (
-              <a href={to} target="_blank" rel="noopener noreferrer" className={linkClass}>
+              <a href={to} {...linkTarget(to)} className={linkClass}>
                 {label}
               </a>
             ) : (
@@ -35,7 +35,7 @@ function ContactRow({ icon, href, children }: { icon: ContactIconName; href: str
   return (
     <a
       href={href}
-      {...(href.startsWith('http') && { target: '_blank', rel: 'noopener noreferrer' })}
+      {...linkTarget(href)}
       className="group flex items-center gap-3 text-sm text-white/55 transition-colors hover:text-white"
     >
       <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition-colors group-hover:border-brand/60 group-hover:text-brand">
