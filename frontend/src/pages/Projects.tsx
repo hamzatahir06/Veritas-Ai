@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
 import { listProjects, deleteProject, type ProjectSummary } from '../lib/projects'
 import ProjectCard from '../components/research/ProjectCard'
 import PageMessage from '../components/shell/PageMessage'
-
-type ContextType = { accessToken?: string }
+import { usePageContext } from '../hooks/usePageContext'
 
 export default function Projects() {
-  const { accessToken } = useOutletContext<ContextType>()
+  const { accessToken } = usePageContext()
   // null = the fetch for the current token hasn't resolved yet.
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)

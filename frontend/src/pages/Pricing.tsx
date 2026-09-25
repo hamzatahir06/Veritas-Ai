@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
-import type { User } from '@supabase/supabase-js'
+import { Link } from 'react-router-dom'
 import { joinWaitlist } from '../lib/api'
 import Footer from '../components/shell/Footer'
-
-type Ctx = { isSignedIn: boolean; accessToken?: string; user: User | null }
+import { usePageContext } from '../hooks/usePageContext'
 
 /** Real-time "looks like an email" check; the server (pydantic EmailStr) is authoritative. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -30,7 +28,7 @@ function Feature({ children, soon = false }: { children: ReactNode; soon?: boole
 }
 
 export default function Pricing() {
-  const { isSignedIn, accessToken, user } = useOutletContext<Ctx>()
+  const { isSignedIn, accessToken, user } = usePageContext()
   const [phase, setPhase] = useState<Phase>('idle')
   const [email, setEmail] = useState('')
   const [touched, setTouched] = useState(false)

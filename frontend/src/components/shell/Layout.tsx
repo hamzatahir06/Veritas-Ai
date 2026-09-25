@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import type { User } from '@supabase/supabase-js'
+import type { PageContext } from '../../hooks/usePageContext'
 
 type LayoutProps = {
   isSignedIn: boolean
@@ -53,7 +54,7 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
         />
         {/* No padding here: pages own their scroll and padding, so Home's prompt bar sits flush with the bottom */}
         <main className="flex-1 overflow-hidden">
-          <Outlet context={{ isSignedIn, accessToken, user }} />
+          <Outlet context={{ isSignedIn, accessToken, user } satisfies PageContext} />
         </main>
       </div>
     </div>

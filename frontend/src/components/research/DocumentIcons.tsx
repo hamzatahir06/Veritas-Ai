@@ -1,4 +1,4 @@
-export function PdfIcon({ className = 'h-12 w-12' }: { className?: string }) {
+export function PdfIcon({ className }: { className: string }) {
   return (
     <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg">
       <rect x="10" y="4" width="26" height="34" rx="4" fill="#ffffff" stroke="#fca5a5" strokeWidth="1.5" />
@@ -13,7 +13,7 @@ export function PdfIcon({ className = 'h-12 w-12' }: { className?: string }) {
   )
 }
 
-export function WordIcon({ className = 'h-12 w-12' }: { className?: string }) {
+export function WordIcon({ className }: { className: string }) {
   return (
     <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg">
       <rect x="14" y="4" width="26" height="34" rx="4" fill="#ffffff" stroke="#93c5fd" strokeWidth="1.5" />

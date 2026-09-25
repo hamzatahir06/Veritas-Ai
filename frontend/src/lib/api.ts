@@ -1,5 +1,21 @@
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 
+/** The Supabase JWT, as the API expects it. */
+export const authHeader = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` })
+
+/** Headers for a JSON body, signed in when a token is given. */
+export const jsonHeaders = (accessToken?: string): Record<string, string> => ({
+  'Content-Type': 'application/json',
+  ...(accessToken ? authHeader(accessToken) : {}),
+})
+
+/** GET a signed-in endpoint's JSON; a non-2xx response throws `errorMessage`. */
+export async function getJson<T>(path: string, accessToken: string, errorMessage: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeader(accessToken) })
+  if (!res.ok) throw new Error(errorMessage)
+  return res.json()
+}
+
 export type StreamEvent =
   | { type: 'searching'; query: string }
   // `sources` is optional so an older backend (or a cached bundle) that omits
@@ -20,6 +36,8 @@ export type StreamEvent =
       provider: string
     }
 
+export type DoneEvent = Extract<StreamEvent, { type: 'done' }>
+
 /**
  * Join the Pro waitlist. Pass `accessToken` for a signed-in user (the backend
  * takes their email + id from the token); pass `email` for a signed-out visitor.
@@ -28,12 +46,9 @@ export type StreamEvent =
 export async function joinWaitlist(
   opts: { email?: string; accessToken?: string },
 ): Promise<{ added: boolean }> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (opts.accessToken) headers['Authorization'] = `Bearer ${opts.accessToken}`
-
   const response = await fetch(`${API_BASE}/api/waitlist`, {
     method: 'POST',
-    headers,
+    headers: jsonHeaders(opts.accessToken),
     body: JSON.stringify(opts.email ? { email: opts.email } : {}),
   })
 
@@ -46,12 +61,9 @@ export async function* streamResearch(
   accessToken?: string,
   signal?: AbortSignal,
 ): AsyncGenerator<StreamEvent> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
-
   const response = await fetch(`${API_BASE}/api/research`, {
     method: 'POST',
-    headers,
+    headers: jsonHeaders(accessToken),
     body: JSON.stringify({ topic }),
     signal,
   })

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useOutletContext, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import HeroBanner from '../components/landing/HeroBanner'
 import LandingPromos from '../components/landing/LandingPromos'
 import PromptBox from '../components/research/PromptBox'
@@ -8,12 +8,11 @@ import SuggestedTopics from '../components/research/SuggestedTopics'
 import StreamingProgress from '../components/research/StreamingProgress'
 import ResultView from '../components/research/ResultView'
 import Footer from '../components/shell/Footer'
+import { usePageContext } from '../hooks/usePageContext'
 import { useResearchThread } from '../hooks/useResearchThread'
 
-type ContextType = { isSignedIn: boolean; accessToken?: string }
-
 export default function Home() {
-  const { isSignedIn, accessToken } = useOutletContext<ContextType>()
+  const { isSignedIn, accessToken } = usePageContext()
   const { turns, ask, stop, isStreaming } = useResearchThread()
   const askTopic = (topic: string) => ask(topic, accessToken)
   const hasStarted = turns.length > 0

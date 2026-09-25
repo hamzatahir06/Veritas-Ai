@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import PageMessage from '../components/shell/PageMessage'
-import { API_BASE } from '../lib/api'
+import { usePageContext } from '../hooks/usePageContext'
+import { getJson } from '../lib/api'
 
-type ContextType = { accessToken?: string }
 type SourceItem = {
   id: string
   title: string
@@ -14,18 +14,14 @@ type SourceItem = {
 }
 
 export default function Sources() {
-  const { accessToken } = useOutletContext<ContextType>()
+  const { accessToken } = usePageContext()
   const [sources, setSources] = useState<SourceItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!accessToken) return
-    fetch(`${API_BASE}/api/sources`, { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((res) => {
-        if (!res.ok) throw new Error('Could not load sources.')
-        return res.json()
-      })
+    getJson<SourceItem[]>('/api/sources', accessToken, 'Could not load sources.')
       .then(setSources)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))

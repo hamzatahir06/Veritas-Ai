@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { streamResearch, type StreamEvent } from '../lib/api'
+import { streamResearch, type DoneEvent, type StreamEvent } from '../lib/api'
 
 type TurnStatus = 'streaming' | 'done' | 'chat' | 'error' | 'stopped'
 
@@ -8,7 +8,7 @@ type Turn = {
   topic: string
   status: TurnStatus
   progress: StreamEvent[]
-  result: Extract<StreamEvent, { type: 'done' }> | null
+  result: DoneEvent | null
   chatReply: string | null
   errorMessage: string | null
 }

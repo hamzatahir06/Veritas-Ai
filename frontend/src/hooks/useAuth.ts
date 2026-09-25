@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { User } from '@supabase/supabase-js'
+import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
 export function useAuth() {
@@ -9,21 +9,17 @@ export function useAuth() {
   const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    // 1. Fetch initial session state on component mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const applySession = (session: Session | null) => {
       setUser(session?.user ?? null)
       setAccessToken(session?.access_token ?? undefined)
       setLoading(false)
-    })
+    }
+
+    // 1. Fetch initial session state on component mount
+    supabase.auth.getSession().then(({ data: { session } }) => applySession(session))
 
     // 2. Listen for real-time auth changes (Sign In, Sign Out, Token Refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
-        setAccessToken(session?.access_token ?? undefined)
-        setLoading(false)
-      }
-    )
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => applySession(session))
 
     return () => subscription.unsubscribe()
   }, [])

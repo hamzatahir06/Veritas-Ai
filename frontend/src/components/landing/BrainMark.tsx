@@ -1,6 +1,6 @@
 import brainImage from '../../assets/Brain.png'
 
-export default function BrainMark({ className = '' }: { className?: string }) {
+export default function BrainMark({ className }: { className: string }) {
   return (
     <img
       src={brainImage}

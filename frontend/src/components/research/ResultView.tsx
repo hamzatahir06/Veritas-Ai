@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
-import { API_BASE, type StreamEvent } from '../../lib/api'
+import { API_BASE, authHeader, jsonHeaders, type DoneEvent } from '../../lib/api'
 import { PdfIcon, WordIcon } from './DocumentIcons'
 
-type DoneEvent = Extract<StreamEvent, { type: 'done' }>
 type Source = DoneEvent['sources'][number]
 
 type ResultViewProps = {
@@ -92,7 +91,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
       const res = isGuest
         ? await fetch(`${API_BASE}/api/documents/${format}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: jsonHeaders(),
             body: JSON.stringify({
               topic: result.topic,
               markdown: result.markdown,
@@ -101,7 +100,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
             }),
           })
         : await fetch(`${API_BASE}/api/projects/${result.project_id}/download/${format}`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
+            headers: authHeader(accessToken!),
           })
       if (!res.ok) throw new Error(`Document request failed (${res.status})`)
 
