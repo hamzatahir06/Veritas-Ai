@@ -14,6 +14,7 @@ change to GEMINI_MODELS.
 """
 
 import json
+import re
 from dataclasses import dataclass, field
 from functools import partial
 
@@ -40,6 +41,9 @@ GROQ_RESULT_CHARS = 3000  # per tool result — results are ranked best-first, s
 STOP_SEARCHING = "Stop searching now and write the final research brief in markdown using only the information already gathered."
 
 
+_LENTICULAR_CITE = re.compile(r"【\s*(\d+)\s*】")
+
+
 def _require_markdown(get_text, provider: str) -> str:
     """
     Coerce a model response's text into a non-empty markdown string.
@@ -57,7 +61,9 @@ def _require_markdown(get_text, provider: str) -> str:
         markdown = ""
     if not markdown:
         raise RuntimeError(f"{provider} returned an empty response")
-    return markdown
+    # Some models (Groq's especially) cite as 【7】 despite the prompt; normalise
+    # to IEEE [7] so the UI links them and the document writers render them.
+    return _LENTICULAR_CITE.sub(r"[\1]", markdown)
 
 
 def _tool_args(raw: dict | None, topic: str) -> dict:
@@ -115,6 +121,10 @@ def run_research(topic: str):
 
     last_error = None
     for name, provider_fn in providers:
+        # Each attempt builds its own sources list, so its citation numbers
+        # must start at [1] too — a failed attempt's numbers would otherwise
+        # leak in and point past the end of the reference list.
+        toolset.reset_citations()
         try:
             yield from provider_fn(topic, toolset)
             return

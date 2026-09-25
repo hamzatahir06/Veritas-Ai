@@ -75,6 +75,11 @@ class Toolset:
         parts.append(text[cursor:])
         return "".join(parts)
 
+    def reset_citations(self) -> None:
+        """Start numbering at [1] again; the search cache is kept."""
+        with self._lock:
+            self._refs.clear()
+
     def run(self, name: str, args: dict, sources: list[dict]) -> tuple[str, list[dict]]:
         # An unrecognized tool name falls back to web search rather than
         # erroring the run — the model occasionally invents a name.
