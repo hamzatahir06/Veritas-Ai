@@ -54,6 +54,7 @@ create index if not exists projects_user_created_idx
 create table if not exists public.sources (
   id          uuid primary key default gen_random_uuid(),
   project_id  uuid not null references public.projects (id) on delete cascade,
+  position    integer,                     -- citation number: this row is [position] in the brief
 
   query       text,                        -- the query that surfaced this hit
   title       text,

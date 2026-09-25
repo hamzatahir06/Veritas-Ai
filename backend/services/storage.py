@@ -28,9 +28,13 @@ def save_project(supabase: Client, user_id: str, result: ResearchResult) -> str:
         # IEEE reference list from (services/document_common.build_references).
         # Persisting them is what keeps a brief re-downloaded months later
         # identical to the one generated at research time.
+        #
+        # `position` is the source's citation number: result.sources is in the
+        # order [1], [2], … were assigned, and nothing else in a row records it.
         rows = [
             {
                 "project_id": project_id,
+                "position": position,
                 "query": s["query"],
                 "title": s.get("title", ""),
                 "url": s.get("url", ""),
@@ -40,7 +44,7 @@ def save_project(supabase: Client, user_id: str, result: ResearchResult) -> str:
                 "published": s.get("published", ""),
                 "kind": s.get("kind", ""),
             }
-            for s in result.sources
+            for position, s in enumerate(result.sources, start=1)
         ]
         supabase.table("sources").insert(rows).execute()
 
@@ -70,8 +74,11 @@ def get_project(supabase: Client, user_id: str, project_id: str) -> dict | None:
         return None
     project = project_res.data[0]
 
+    # Citation order. Rows saved before `position` existed are NULL and sort
+    # last, in whatever order Postgres returns them — as they always did.
     sources_res = (
-        supabase.table("sources").select("*").eq("project_id", project_id).execute()
+        supabase.table("sources").select("*").eq("project_id", project_id)
+        .order("position").execute()
     )
     return {**project, "sources": sources_res.data}
 
