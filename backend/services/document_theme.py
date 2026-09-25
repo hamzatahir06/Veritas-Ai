@@ -55,6 +55,7 @@ PARA_SPACE = 2.4
 HEADING_SPACE_BEFORE = {1: 7.0, 2: 5.0, 3: 4.0}
 HEADING_SPACE_AFTER = {1: 3.0, 2: 2.2, 3: 1.8}
 BULLET_INDENT = 6.0
+BULLET_GAP = 0.8                  # between items of one list
 QUOTE_INDENT = 8.0
 
 # --- colour -----------------------------------------------------------------
@@ -81,6 +82,7 @@ WORD_BODY_FAMILY = "Cambria"
 WORD_MONO_FAMILY = "Consolas"
 WORD_LINE_SPACING = 1.2
 WORD_SPACE_AFTER = 6              # pt after body paragraphs
+WORD_LIST_SPACE_AFTER = 2         # pt between items of one list — they read as one block
 
 # Word paginates on the reader's machine, so the spec's "TOC past ~10 pages"
 # must be judged before layout: ~450 words per Letter page at 11pt / 1.2.

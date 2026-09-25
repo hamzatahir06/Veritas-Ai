@@ -8,7 +8,6 @@ without ever touching a database.
 
 from supabase import Client
 from agent.core import ResearchResult
-import os
 from pathlib import Path
 
 

@@ -22,19 +22,24 @@ Notable choices, all of them load-bearing:
   one past ~10 pages, and page count isn't knowable before layout.
 """
 
+import io
 import os
 from datetime import date
 
 from fpdf import FPDF
 from fpdf.enums import TableBordersLayout
 from fpdf.fonts import FontFace
+from PIL import Image
 
 from agent.core import ResearchResult
 from services import document_theme as T
+from services.charts import Chart, chart_from_table, render_png
 from services.document_common import (
     Block, Run, SectionNumberer, build_references, clean, document_filename,
-    normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
+    ends_list, normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
 )
+
+PT_TO_MM = 25.4 / 72
 
 
 class BriefPDF(FPDF):
@@ -77,37 +82,32 @@ class BriefPDF(FPDF):
     def rich_block(self, runs: list[Run], *, indent: float = 0.0,
                    base_style: str = "", color: tuple = T.INK):
         """
-        Draws styled runs as flowing text.
+        Draws styled runs as one flowing paragraph.
 
-        `write()` wraps at the right margin and returns to l_margin, so a
-        hanging indent has to be applied as a real left margin for the
-        duration of the block rather than a one-off set_x().
+        Laid out as a single text_columns() paragraph rather than one write()
+        per run: write() wraps each run on its own, so a run that starts with
+        an unbreakable token near the line end ("44 %", joined by a narrow
+        no-break space) got split character by character — "4" / "4 %".
         """
-        base_margin = self.l_margin
-        self.set_left_margin(base_margin + indent)
+        with self.text_columns(l_margin=self.l_margin + indent,
+                               line_height=T.LINE / (T.SIZE_BODY * PT_TO_MM)) as columns:
+            with columns.paragraph() as paragraph:
+                for run in runs:
+                    style = base_style
+                    if run.bold and "B" not in style:
+                        style += "B"
+                    if run.italic and "I" not in style:
+                        style += "I"
+                    if run.link:
+                        self.set_text_color(*T.LINK)
+                        self.set_font(T.BODY_FAMILY, style=style + "U", size=T.SIZE_BODY)
+                        paragraph.write(run.text, link=run.link)
+                    else:
+                        self.set_text_color(*color)
+                        self.set_font(T.BODY_FAMILY, style=style,
+                                      size=T.SIZE_BODY * (0.92 if run.code else 1))
+                        paragraph.write(run.text)
         self.set_x(self.l_margin)
-        for run in runs:
-            style = base_style
-            if run.bold:
-                style += "B" if "B" not in style else ""
-            if run.italic:
-                style += "I" if "I" not in style else ""
-
-            if run.link:
-                self.set_text_color(*T.LINK)
-                self.set_font(T.BODY_FAMILY, style=style + ("U" if "U" not in style else ""),
-                              size=T.SIZE_BODY)
-                self.write(T.LINE, run.text, link=run.link)
-            else:
-                # IEEE markers are plain text. Colouring or bolding every
-                # citation speckles the page and reads as decoration, and it
-                # spends the one permitted accent colour on punctuation.
-                self.set_text_color(*color)
-                self.set_font(T.BODY_FAMILY, style=style,
-                              size=T.SIZE_BODY * (0.92 if run.code else 1))
-                self.write(T.LINE, run.text)
-        self.ln(T.LINE)
-        self.set_left_margin(base_margin)
         self.set_text_color(*T.INK)
 
     def rule(self, width: float | None = None, color: tuple = T.RULE, thickness: float = 0.4):
@@ -157,7 +157,10 @@ def _render_toc(pdf: FPDF, outline):
 
 
 def _section_heading(pdf: BriefPDF, label: str, level: int):
-    """One numbered heading: outline entry, text, and the level-1 accent rule."""
+    """
+    One numbered heading: outline entry, text, and its rule — the accent
+    colour under sections, a thin grey one under subsections.
+    """
     size = T.HEADING_SIZES[level]
     pdf.keep_with_next(T.HEADING_SPACE_BEFORE[level] + size * 0.5 + T.LINE * 2)
     pdf.ln(T.HEADING_SPACE_BEFORE[level])
@@ -165,6 +168,8 @@ def _section_heading(pdf: BriefPDF, label: str, level: int):
     pdf.text_block(label, style=T.HEADING_STYLES[level], size=size, height=size * 0.45)
     if level == 1:
         pdf.rule(color=T.BRAND, thickness=0.6)
+    elif level == 2:
+        pdf.rule(color=T.RULE, thickness=0.3)
     pdf.ln(T.HEADING_SPACE_AFTER[level])
 
 
@@ -176,7 +181,7 @@ def _bullet(pdf: BriefPDF, block: Block):
     pdf.set_text_color(*T.INK)
     pdf.cell(T.BULLET_INDENT, T.LINE, marker, new_x="RIGHT", new_y="TOP")
     pdf.rich_block(parse_inline(block.text), indent=indent)
-    pdf.ln(0.8)
+    pdf.ln(T.BULLET_GAP)
 
 
 def _table(pdf: BriefPDF, block: Block):
@@ -184,6 +189,9 @@ def _table(pdf: BriefPDF, block: Block):
         return
     # Spec: a table's caption sits above it and must make sense alone.
     if block.caption:
+        # Never strand the caption at a page foot: keep it with the heading
+        # row and the first couple of body rows.
+        pdf.keep_with_next(T.LINE * 5)
         pdf.ln(1.5)
         pdf.text_block(clean(block.caption), style="I", size=T.SIZE_CAPTION, color=T.MUTED)
         pdf.ln(0.8)
@@ -217,6 +225,19 @@ def _table(pdf: BriefPDF, block: Block):
             row = table.row()
             for cell in data:
                 row.cell(clean(cell))
+    pdf.ln(T.PARA_SPACE)
+
+
+def _figure(pdf: BriefPDF, chart: Chart, number: int):
+    """A chart under its table, captioned below as figures conventionally are."""
+    png = render_png(chart, pdf.usable_width)
+    with Image.open(io.BytesIO(png)) as image:
+        height = pdf.usable_width * image.height / image.width
+    pdf.keep_with_next(height + T.LINE * 2)  # never split a figure from its caption
+    pdf.image(io.BytesIO(png), x=pdf.l_margin, w=pdf.usable_width, h=height)
+    pdf.ln(1)
+    pdf.text_block(f"Figure {number}: {chart.caption}", style="I",
+                   size=T.SIZE_CAPTION, color=T.MUTED)
     pdf.ln(T.PARA_SPACE)
 
 
@@ -266,15 +287,21 @@ def _render(result: ResearchResult, *, with_toc: bool, today: date) -> BriefPDF:
 
     numberer = SectionNumberer()
     blocks = normalise_headings(parse_markdown(strip_citations(result.markdown)))
+    figures = 0
 
-    for block in blocks:
+    for i, block in enumerate(blocks):
         if block.type == "heading":
             level = min(block.level, 3)
             _section_heading(pdf, f"{numberer.next(level)}  {block.text}", level)
         elif block.type == "bullet":
             _bullet(pdf, block)
+            if ends_list(blocks, i):
+                pdf.ln(T.PARA_SPACE - T.BULLET_GAP)
         elif block.type == "table":
             _table(pdf, block)
+            if chart := chart_from_table(block):
+                figures += 1
+                _figure(pdf, chart, figures)
         elif block.type == "caption":
             pdf.text_block(clean(block.text), style="I", size=T.SIZE_CAPTION, color=T.MUTED)
             pdf.ln(T.PARA_SPACE)

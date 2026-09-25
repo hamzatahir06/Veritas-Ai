@@ -80,6 +80,10 @@ Plain, precise, calm — write for a senior researcher who is short on time.
 - Use a markdown table for any genuine comparison across 3+ items or dimensions. Introduce it in
   the text first ("Table 1 summarises...") and put its caption on the line directly above it,
   written so it makes sense alone: "Table 1: Cost per kWh by cohort, 2024-2026."
+  When a table compares ONE measure across items, give it exactly two columns — the item and
+  the value — with the unit in the value header ("Adoption (%)") and one exact figure per cell
+  ("45%", not "~45%" or "40-50%"). Never mix units in one column. Only tabulate figures a
+  source actually states.
 - NEVER use: revolutionary, groundbreaking, game-changing, cutting-edge, seamless, delve,
   "in today's fast-paced world", "it is important to note", exclamation marks, emojis,
   rhetorical questions.

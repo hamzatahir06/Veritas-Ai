@@ -322,6 +322,11 @@ class SectionNumberer:
         return ".".join(str(c) for c in self._counters[:index + 1])
 
 
+def ends_list(blocks: list[Block], i: int) -> bool:
+    """Whether blocks[i] is the last item of its list — lists sit tight inside, then get a paragraph gap."""
+    return i + 1 == len(blocks) or blocks[i + 1].type != "bullet"
+
+
 def normalise_headings(blocks: list[Block]) -> list[Block]:
     """
     Drops the model's own H1 and re-bases what remains so the shallowest

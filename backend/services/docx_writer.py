@@ -26,6 +26,7 @@ Word-specific choices, each deliberate:
   theme colours with it.
 """
 
+import io
 import os
 from datetime import date
 
@@ -33,13 +34,14 @@ from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.shared import OxmlElement, qn
-from docx.shared import Inches, Pt, RGBColor
+from docx.shared import Emu, Inches, Pt, RGBColor
 
 from agent.core import ResearchResult
 from services import document_theme as T
+from services.charts import Chart, chart_from_table, render_png
 from services.document_common import (
     Block, SectionNumberer, build_references, clean, document_filename,
-    normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
+    ends_list, normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
 )
 
 H1, H2, H3 = "Veritas Heading 1", "Veritas Heading 2", "Veritas Heading 3"
@@ -220,6 +222,12 @@ def _define_styles(doc):
     # does not list itself inside the table of contents.
     make(CONTENTS_STYLE, T.SIZE_H1, bold=True, before=0, after=5, keep=True)
 
+    # Word's list styles inherit Normal's space-after, which opens a full gap
+    # between the points of one list. Items sit tight; build_docx() gives the
+    # last item of each list the normal gap so the next paragraph isn't cramped.
+    for name in ("List Bullet", "List Bullet 2", "List Number", "List Number 2"):
+        doc.styles[name].paragraph_format.space_after = Pt(T.WORD_LIST_SPACE_AFTER)
+
 
 def _setup_page(doc):
     section = doc.sections[0]
@@ -307,10 +315,12 @@ def _add_toc(doc):
 
 
 def _section_heading(doc, label: str, level: int):
-    """One numbered heading, with the accent rule under level 1 — as in the PDF."""
+    """One numbered heading with its rule — accent under level 1, grey under level 2, as in the PDF."""
     paragraph = doc.add_paragraph(label, style=HEADING_STYLES[level])
     if level == 1:
         _bottom_rule(paragraph, T.BRAND)
+    elif level == 2:
+        _bottom_rule(paragraph, T.RULE, size=4)
     return paragraph
 
 
@@ -373,6 +383,15 @@ def _add_references(doc, result: ResearchResult, numberer: SectionNumberer):
 # entry points
 # --------------------------------------------------------------------------
 
+def _add_figure(doc, chart: Chart, number: int):
+    """A chart under its table, captioned below — the PDF's layout."""
+    section = doc.sections[0]
+    width = Emu(section.page_width - section.left_margin - section.right_margin)
+    doc.add_picture(io.BytesIO(render_png(chart, width.mm)), width=width)
+    doc.paragraphs[-1].paragraph_format.keep_with_next = True
+    doc.add_paragraph(f"Figure {number}: {chart.caption}", style=CAPTION_STYLE)
+
+
 def build_docx(result: ResearchResult, today: date | None = None):
     today = today or date.today()
     topic = clean(result.topic)
@@ -388,7 +407,8 @@ def build_docx(result: ResearchResult, today: date | None = None):
         _add_toc(doc)
 
     numberer = SectionNumberer()
-    for block in blocks:
+    figures = 0
+    for i, block in enumerate(blocks):
         if block.type == "heading":
             level = min(block.level, 3)
             _section_heading(doc, f"{numberer.next(level)}  {block.text}", level)
@@ -396,9 +416,15 @@ def build_docx(result: ResearchResult, today: date | None = None):
             style = "List Number" if block.ordered else "List Bullet"
             if block.level >= 2:
                 style += " 2"
-            _add_runs(doc.add_paragraph(style=style), block.text)
+            item = doc.add_paragraph(style=style)
+            _add_runs(item, block.text)
+            if ends_list(blocks, i):
+                item.paragraph_format.space_after = Pt(T.WORD_SPACE_AFTER)
         elif block.type == "table":
             _add_table(doc, block)
+            if chart := chart_from_table(block):
+                figures += 1
+                _add_figure(doc, chart, figures)
         elif block.type == "caption":
             doc.add_paragraph(clean(block.text), style=CAPTION_STYLE)
         elif block.type == "quote":
