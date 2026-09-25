@@ -33,7 +33,7 @@ from agent.core import ResearchResult
 from services import document_theme as T
 from services.document_common import (
     Block, Run, SectionNumberer, build_references, clean, document_filename,
-    normalise_headings, numeric_columns, parse_inline, parse_markdown,
+    normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
 )
 
 
@@ -265,7 +265,7 @@ def _render(result: ResearchResult, *, with_toc: bool, today: date) -> BriefPDF:
         pdf.insert_toc_placeholder(_render_toc, pages=1, allow_extra_pages=True)
 
     numberer = SectionNumberer()
-    blocks = normalise_headings(parse_markdown(result.markdown))
+    blocks = normalise_headings(parse_markdown(strip_citations(result.markdown)))
 
     for block in blocks:
         if block.type == "heading":

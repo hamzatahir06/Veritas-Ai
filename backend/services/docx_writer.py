@@ -39,7 +39,7 @@ from agent.core import ResearchResult
 from services import document_theme as T
 from services.document_common import (
     Block, SectionNumberer, build_references, clean, document_filename,
-    normalise_headings, numeric_columns, parse_inline, parse_markdown,
+    normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
 )
 
 H1, H2, H3 = "Veritas Heading 1", "Veritas Heading 2", "Veritas Heading 3"
@@ -383,7 +383,7 @@ def build_docx(result: ResearchResult, today: date | None = None):
     _set_metadata(doc, result, topic)
     _title_page(doc, result, today)
 
-    blocks = normalise_headings(parse_markdown(result.markdown))
+    blocks = normalise_headings(parse_markdown(strip_citations(result.markdown)))
     if len(result.markdown.split()) > T.WORD_TOC_WORD_THRESHOLD:
         _add_toc(doc)
 

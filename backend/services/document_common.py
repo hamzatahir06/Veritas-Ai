@@ -48,6 +48,23 @@ _INLINE = re.compile(
 )
 
 
+# A run of IEEE markers plus the space before it: " [16], [17]" / " [1, 4]".
+# Never a markdown link "[1](url)".
+_CITATION_GROUP = re.compile(
+    r"\s*\[\d+(?:\s*,\s*\d+)*\](?:\s*,?\s*\[\d+(?:\s*,\s*\d+)*\])*(?!\()"
+)
+
+
+def strip_citations(markdown: str) -> str:
+    """
+    Removes in-text citation markers; the documents print no [n] in the body.
+
+    Done on the raw text, before parse_inline(), because that glues trailing
+    punctuation onto the citation run — dropping runs would lose the full stop.
+    """
+    return _CITATION_GROUP.sub("", markdown)
+
+
 def clean(text: str) -> str:
     """Strips citation-marker artifacts models sometimes emit unprompted."""
     return _CITATION_ARTIFACT_PATTERN.sub("", text).strip()
