@@ -15,9 +15,7 @@ Word-specific choices, each deliberate:
 * Headings use custom styles rather than Word's built-in Heading 1-3, whose
   blue theme colour ignores the document's own palette entirely.
 * The footer is a real section footer carrying a PAGE field, suppressed on
-  the title page. The previous writer appended an ordinary body paragraph,
-  so its "Generated …" line appeared once, in the text flow, on whatever page
-  the brief happened to end.
+  the title page.
 * Section numbers are written into the heading text instead of being driven
   by a Word list definition. That keeps them identical to the PDF's and stops
   Word renumbering them on the reader's behalf.
@@ -391,8 +389,8 @@ def _add_figure(doc, chart: Chart, number: int):
 # entry point
 # --------------------------------------------------------------------------
 
-def build_docx(result: ResearchResult, today: date | None = None):
-    today = today or date.today()
+def build_docx(result: ResearchResult):
+    today = date.today()
     topic = clean(result.topic)
 
     doc = Document()

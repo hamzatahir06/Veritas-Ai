@@ -297,8 +297,8 @@ class SectionNumberer:
     section 5.2 in different places.
     """
 
-    def __init__(self, depth: int = 3):
-        self._counters = [0] * depth
+    def __init__(self):
+        self._counters = [0, 0, 0]   # three levels: 1 / 1.1 / 1.1.1
 
     def next(self, level: int) -> str:
         index = min(max(level, 1), len(self._counters)) - 1

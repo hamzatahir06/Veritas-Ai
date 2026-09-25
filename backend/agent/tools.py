@@ -176,7 +176,7 @@ def top_up(results: list[dict], fetch_unfiltered, key: str, limit: int) -> tuple
     return results + extra[:limit - len(results)], bool(extra)
 
 
-def make_web_search(tavily_client: TavilyClient, topic: str = ""):
+def make_web_search(tavily_client: TavilyClient, topic: str):
     topic_keywords = _topic_keywords(topic)
 
     def _ranked(query: str, recency: str | None, category: str) -> list[dict]:

@@ -109,7 +109,7 @@ def _fetch(query: str, recency: str | None) -> list[dict]:
     return resp.json().get("results", [])
 
 
-def make_scholarly_search(topic: str = ""):
+def make_scholarly_search(topic: str):
     def scholarly_search(query: str, recency: Recency | None = None) -> tuple[str, list[dict]]:
         recency = recency if recency in RECENCY_DAYS else None
         if recency:

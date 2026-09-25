@@ -12,7 +12,7 @@ formatting opinion from ever being able to kill a research run.
 """
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass
 
 from services.document_common import Block, citation_numbers, plain_text, strip_citations
 
@@ -48,14 +48,6 @@ class Finding:
     code: str
     message: str
     severity: str = "warn"   # "warn" | "error"
-
-
-@dataclass
-class Review:
-    findings: list[Finding] = field(default_factory=list)
-
-    def as_dicts(self) -> list[dict]:
-        return [{"code": f.code, "message": f.message, "severity": f.severity} for f in self.findings]
 
 
 def _section_level(blocks: list[Block]) -> int:
@@ -105,13 +97,13 @@ def _prose(blocks: list[Block]) -> str:
     )
 
 
-def review(markdown: str, blocks: list[Block], sources: list[dict]) -> Review:
-    """Checks a parsed draft against the house spec. Never raises."""
+def review(markdown: str, blocks: list[Block], sources: list[dict]) -> list[dict]:
+    """Checks a parsed draft against the house spec; findings as {code, message, severity}. Never raises."""
     try:
         findings = _run_checks(markdown, blocks, sources)
     except Exception as e:  # a broken check must never break document generation
         findings = [Finding("review_failed", f"Review could not run: {e}")]
-    return Review(findings)
+    return [asdict(f) for f in findings]
 
 
 def _run_checks(markdown: str, blocks: list[Block], sources: list[dict]) -> list[Finding]:

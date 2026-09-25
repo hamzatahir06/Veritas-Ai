@@ -1,9 +1,9 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 
-def build_system_prompt(today: date | None = None) -> str:
+def build_system_prompt() -> str:
     """SYSTEM_PROMPT with the real current date filled in — rebuilt per run."""
-    today = today or datetime.now(timezone.utc).date()
+    today = datetime.now(timezone.utc).date()
     return SYSTEM_PROMPT.replace("{today}", f"{today:%A, %B} {today.day}, {today.year}")
 
 

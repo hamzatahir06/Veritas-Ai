@@ -134,9 +134,7 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                 # failing check never blocks the brief or the save. Runs here
                 # rather than in agent/core.py to keep the agent package free
                 # of the services layer.
-                findings = review_brief(
-                    result.markdown, parse_markdown(result.markdown), result.sources
-                ).as_dicts()
+                findings = review_brief(result.markdown, parse_markdown(result.markdown), result.sources)
                 if findings:
                     print(f"[review] {len(findings)} finding(s) for {result.topic!r}: "
                           + "; ".join(f["code"] for f in findings))

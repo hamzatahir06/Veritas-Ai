@@ -24,6 +24,7 @@ from services import document_theme as T
 from services.document_common import Block, plain_text
 
 MIN_ROWS, MAX_ROWS = 3, 12
+MAX_LABEL_LINES = 2
 
 # One value: optional leading currency, a non-negative number, optional
 # trailing % or currency. Anything else ("~9", "n/a", "3-5", "−2") disqualifies
@@ -98,7 +99,7 @@ def _font(size_pt: float):
     return ImageFont.truetype(T.body_face_paths()[""], _px(size_pt))
 
 
-def _wrap(draw, text: str, font, width: int, max_lines: int = 2) -> list[str]:
+def _wrap(draw, text: str, font, width: int) -> list[str]:
     """Greedy word wrap to a pixel width; the last line ellipsised if needed."""
     lines: list[str] = []
     for word in text.split():
@@ -106,8 +107,8 @@ def _wrap(draw, text: str, font, width: int, max_lines: int = 2) -> list[str]:
             lines[-1] += f" {word}"
         else:
             lines.append(word)
-    if len(lines) > max_lines:
-        lines = lines[:max_lines]
+    if len(lines) > MAX_LABEL_LINES:
+        lines = lines[:MAX_LABEL_LINES]
         lines[-1] += "…"
     while draw.textlength(lines[-1], font=font) > width:
         lines[-1] = lines[-1][:-2] + "…"

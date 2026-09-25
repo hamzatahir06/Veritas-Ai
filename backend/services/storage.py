@@ -158,11 +158,12 @@ def upload_document(
     return storage_path
 
 
-def get_document_url(
-    supabase: Client, storage_path: str, expires_in: int = 300, download_as: str = "",
-) -> str:
+SIGNED_URL_SECONDS = 300
+
+
+def get_document_url(supabase: Client, storage_path: str, download_as: str = "") -> str:
     """
-    Returns a signed URL valid for expires_in seconds (default 5 minutes).
+    Returns a signed URL valid for SIGNED_URL_SECONDS (5 minutes).
 
     Objects are keyed `{user_id}/{project_id}.pdf`, so without `download_as`
     the browser saves the brief under a UUID. Passing a filename sets the
@@ -171,7 +172,7 @@ def get_document_url(
     """
     options = {"download": download_as} if download_as else None
     result = supabase.storage.from_("documents").create_signed_url(
-        storage_path, expires_in, options=options
+        storage_path, SIGNED_URL_SECONDS, options=options
     )
     return result["signedURL"]
 

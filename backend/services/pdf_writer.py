@@ -320,13 +320,13 @@ def _render(result: ResearchResult, *, with_toc: bool, today: date) -> BriefPDF:
     return pdf
 
 
-def build_pdf(result: ResearchResult, today: date | None = None) -> BriefPDF:
+def build_pdf(result: ResearchResult) -> BriefPDF:
     """
     Renders the brief, adding a table of contents only when the document runs
     past the spec's ~10-page threshold. Page count isn't knowable until the
     document is laid out, so a throwaway pass measures it first.
     """
-    today = today or date.today()
+    today = date.today()
     probe = _render(result, with_toc=False, today=today)
     if probe.pages_count <= T.TOC_PAGE_THRESHOLD:
         return probe
