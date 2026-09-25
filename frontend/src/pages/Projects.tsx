@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { listProjects, deleteProject, type ProjectSummary } from '../lib/projects'
 import ProjectCard from '../components/research/ProjectCard'
+import PageMessage from '../components/shell/PageMessage'
 
 type ContextType = { accessToken?: string }
 
@@ -40,28 +41,10 @@ export default function Projects() {
     setProjects((prev) => (prev ? prev.filter((p) => p.id !== id) : prev))
   }
 
-  if (loading) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-ink/50">Loading Projects...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-red-600">{error}</div>
-      </div>
-    )
-  }
-
+  if (loading) return <PageMessage>Loading Projects...</PageMessage>
+  if (error) return <PageMessage error>{error}</PageMessage>
   if (!projects || projects.length === 0) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-ink/50">No projects yet — start a topic on Home.</div>
-      </div>
-    )
+    return <PageMessage>No projects yet — start a topic on Home.</PageMessage>
   }
 
   return (

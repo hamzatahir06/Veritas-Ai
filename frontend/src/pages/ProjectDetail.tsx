@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useOutletContext, Link } from 'react-router-dom'
 import ResultView from '../components/research/ResultView'
+import PageMessage from '../components/shell/PageMessage'
 import { API_BASE } from '../lib/api'
 
 type ContextType = { accessToken?: string }
@@ -30,21 +31,8 @@ export default function ProjectDetail() {
       .catch((err) => setError(err.message))
   }, [accessToken, id])
 
-  if (error) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-red-600">{error}</div>
-      </div>
-    )
-  }
-
-  if (!project) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-ink/50">Loading…</div>
-      </div>
-    )
-  }
+  if (error) return <PageMessage error>{error}</PageMessage>
+  if (!project) return <PageMessage>Loading…</PageMessage>
 
   return (
     <div className="h-full overflow-y-auto">
@@ -62,7 +50,7 @@ export default function ProjectDetail() {
             sources: project.sources,
             provider: project.provider || '',
           }}
-          accessToken={accessToken} 
+          accessToken={accessToken}
         />
       </div>
     </div>

@@ -19,7 +19,7 @@ export type StreamEvent =
       sources: { query: string; title: string; url: string; snippet: string }[]
       provider: string
     }
-    
+
 /**
  * Join the Pro waitlist. Pass `accessToken` for a signed-in user (the backend
  * takes their email + id from the token); pass `email` for a signed-out visitor.

@@ -30,13 +30,9 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
     })
   }
 
-  const isResearching = events.length > 0
-
   return (
     <div className="rounded-2xl border border-black/10 bg-white p-5">
-      <div className="mb-3 text-sm font-medium text-ink/60">
-        {done ? 'Research steps' : isResearching ? 'Researching' : 'Classifying user intent'}
-      </div>
+      <div className="mb-3 text-sm font-medium text-ink/60">{done ? 'Research steps' : 'Researching'}</div>
 
       <ul className="flex flex-col gap-2">
         {events.map((event, i) => {

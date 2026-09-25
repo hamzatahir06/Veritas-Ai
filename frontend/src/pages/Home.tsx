@@ -15,6 +15,7 @@ type ContextType = { isSignedIn: boolean; accessToken?: string }
 export default function Home() {
   const { isSignedIn, accessToken } = useOutletContext<ContextType>()
   const { turns, ask, stop, isStreaming } = useResearchThread()
+  const askTopic = (topic: string) => ask(topic, accessToken)
   const hasStarted = turns.length > 0
   const location = useLocation()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -60,10 +61,10 @@ export default function Home() {
 
           {/* Type Bar */}
           <div className="w-full">
-            <PromptBox onSubmit={(topic) => ask(topic, accessToken)} onStop={stop} streaming={isStreaming} />
+            <PromptBox onSubmit={askTopic} onStop={stop} streaming={isStreaming} />
           </div>
-          
-          <SuggestedTopics onSelect={(topic) => ask(topic, accessToken)} />
+
+          <SuggestedTopics onSelect={askTopic} />
 
           {/* Promotional Content (Shown for unauthenticated users on scroll) */}
           {!isSignedIn && <LandingPromos />}
@@ -82,9 +83,9 @@ export default function Home() {
             {turns.map((turn, index) => {
               const isLast = index === turns.length - 1
               return (
-                <div 
-                  key={turn.id} 
-                  ref={isLast ? lastTurnRef : null} 
+                <div
+                  key={turn.id}
+                  ref={isLast ? lastTurnRef : null}
                   className="flex flex-col gap-4 scroll-mt-6"
                 >
                   <div className="flex justify-end">
@@ -128,7 +129,7 @@ export default function Home() {
 
       <div className="shrink-0 border-t border-black/5 bg-white pt-2 pb-0 sm:pb-1">
         <div className="mx-auto max-w-4xl px-4 md:px-0">
-          <PromptBox onSubmit={(topic) => ask(topic, accessToken)} onStop={stop} streaming={isStreaming} />
+          <PromptBox onSubmit={askTopic} onStop={stop} streaming={isStreaming} />
         </div>
       </div>
     </div>

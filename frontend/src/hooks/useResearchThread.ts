@@ -3,7 +3,7 @@ import { streamResearch, type StreamEvent } from '../lib/api'
 
 type TurnStatus = 'streaming' | 'done' | 'chat' | 'error' | 'stopped'
 
-export type Turn = {
+type Turn = {
   id: string
   topic: string
   status: TurnStatus

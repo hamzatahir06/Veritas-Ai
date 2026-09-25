@@ -10,13 +10,6 @@ const GREETINGS = [
 // pure — a re-render can never swap the greeting out from under the reader.
 const GREETING = GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
 
-type WelcomeGreetingProps = {
-  className?: string
-}
-
-export default function WelcomeGreeting({
-  // Default to black text; easily change text-black to text-brand to test color!
-  className = 'font-serif text-xl sm:text-2xl font-medium italic text-black',
-}: WelcomeGreetingProps) {
+export default function WelcomeGreeting({ className }: { className: string }) {
   return <h2 className={className}>{GREETING}</h2>
 }

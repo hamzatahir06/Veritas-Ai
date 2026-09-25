@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import PageMessage from '../components/shell/PageMessage'
 import { API_BASE } from '../lib/api'
 
 type ContextType = { accessToken?: string }
@@ -30,29 +31,9 @@ export default function Sources() {
       .finally(() => setLoading(false))
   }, [accessToken])
 
-  if (loading) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-ink/50">Loading sources…</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-red-600">{error}</div>
-      </div>
-    )
-  }
-
-  if (sources.length === 0) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <div className="text-ink/50">No sources yet — start a research on Home.</div>
-      </div>
-    )
-  }
+  if (loading) return <PageMessage>Loading sources…</PageMessage>
+  if (error) return <PageMessage error>{error}</PageMessage>
+  if (sources.length === 0) return <PageMessage>No sources yet — start a research on Home.</PageMessage>
 
   return (
     <div className="h-full overflow-y-auto">

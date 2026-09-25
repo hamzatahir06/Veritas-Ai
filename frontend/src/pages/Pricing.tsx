@@ -68,7 +68,7 @@ export default function Pricing() {
 
         {/* Pricing Cards Container */}
         <div className="mt-12 grid gap-8 text-left md:grid-cols-2 md:items-stretch">
-          
+
           {/* 1. FREE PLAN */}
           <div className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-6 shadow-xs sm:p-8">
             <div>

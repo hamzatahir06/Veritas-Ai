@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
-import type { StreamEvent } from '../../lib/api'
+import { API_BASE, type StreamEvent } from '../../lib/api'
 import { PdfIcon, WordIcon } from './DocumentIcons'
-import { API_BASE } from '../../lib/api'
 
 type DoneEvent = Extract<StreamEvent, { type: 'done' }>
 type Source = DoneEvent['sources'][number]
@@ -70,7 +69,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
 
   // Only render export buttons for actual research outputs
   const isResearchBrief = Boolean(
-    uniqueSources.length > 0 || 
+    uniqueSources.length > 0 ||
     (result.markdown && (result.markdown.includes('#') || result.markdown.length > 350))
   )
 
@@ -163,7 +162,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
           <div className="mb-1 text-sm font-semibold text-ink">Export Documents</div>
 
           {/* Premium PDF Card */}
-          <div className="relative overflow-hidden rounded-xl border-2 border-[#FA0F00] bg-gradient-to-br from-red-50 to-white px-4 pt-4">
+          <div className="overflow-hidden rounded-xl border-2 border-[#FA0F00] bg-gradient-to-br from-red-50 to-white px-4 pt-4">
             <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
               <div className="flex items-center gap-4">
                 <PdfIcon className="h-12 w-12 shrink-0" />
@@ -191,7 +190,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
           </div>
 
           {/* Premium Word Card */}
-          <div className="relative overflow-hidden rounded-xl border-2 border-[#185ABD] bg-gradient-to-br from-blue-50 to-white px-4 pt-4">
+          <div className="overflow-hidden rounded-xl border-2 border-[#185ABD] bg-gradient-to-br from-blue-50 to-white px-4 pt-4">
             <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
               <div className="flex items-center gap-4">
                 <WordIcon className="h-12 w-12 shrink-0" />
@@ -213,9 +212,9 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
           </div>
 
           <div className="mt-2 text-center text-xs font-medium text-ink/40">
-            {isGuest 
-              ? "Guest session: nothing is saved, so download your documents now" 
-              : "Saved securely to your project archives"}
+            {isGuest
+              ? 'Guest session: nothing is saved, so download your documents now'
+              : 'Saved securely to your project archives'}
           </div>
         </div>
       )}

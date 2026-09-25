@@ -51,7 +51,7 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
           menuOpen={menuOpen}
           onToggleMenu={toggleMenu}
         />
-        {/* Removed px-8 py-8 to let Home take the full height and touch the bottom edge cleanly */}
+        {/* No padding here: pages own their scroll and padding, so Home's prompt bar sits flush with the bottom */}
         <main className="flex-1 overflow-hidden">
           <Outlet context={{ isSignedIn, accessToken, user }} />
         </main>
