@@ -1,4 +1,5 @@
-import ReactMarkdown from 'react-markdown'
+import { useMemo } from 'react'
+import ReactMarkdown, { type Components } from 'react-markdown'
 import type { StreamEvent } from '../../lib/api'
 import { PdfIcon, WordIcon } from './DocumentIcons'
 import { API_BASE } from '../../lib/api'
@@ -43,10 +44,55 @@ function markdownToFormattedHtml(md: string): string {
     .replace(/\n/gim, '<br/>')
 }
 
+const CITE_HREF = '#cite-'
+
+/**
+ * Mark IEEE citations like "[3]" as links; the `a` renderer below points each
+ * one at its source's URL. Only numbers that have an entry are linked, and an existing markdown
+ * link or reference definition ("[3](…)", "[3]:") is left alone.
+ */
+function linkCitations(md: string, sourceCount: number): string {
+  // 【n】 is accepted too: briefs saved before the backend normalised it.
+  return md.replace(/(?:\[(\d+)\]|【\s*(\d+)\s*】)(?![(:])/g, (match, bracket?: string, lenticular?: string) => {
+    const n = (bracket ?? lenticular) as string
+    const index = Number(n)
+    return index >= 1 && index <= sourceCount ? `[\\[${n}\\]](${CITE_HREF}${n})` : match
+  })
+}
+
 export default function ResultView({ result, accessToken }: ResultViewProps) {
   const uniqueSources: Source[] = Array.from(
     new Map((result.sources ?? []).map((s) => [s.url, s] as const)).values(),
   )
+
+  const briefMarkdown = useMemo(
+    () => linkCitations(result.markdown || '', uniqueSources.length),
+    [result.markdown, uniqueSources.length],
+  )
+
+  const markdownComponents: Components = {
+    a: ({ href, children }) => {
+      if (href?.startsWith(CITE_HREF)) {
+        const source = uniqueSources[Number(href.slice(CITE_HREF.length)) - 1]
+        return (
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noreferrer"
+            title={source.title || source.url}
+            className="text-brand-dark no-underline hover:underline"
+          >
+            {children}
+          </a>
+        )
+      }
+      return (
+        <a href={href} target="_blank" rel="noreferrer">
+          {children}
+        </a>
+      )
+    },
+  }
 
   // Only render export buttons for actual research outputs
   const isResearchBrief = Boolean(
@@ -338,7 +384,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
     <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
       {/* Brief Body */}
       <div className="markdown-content text-ink/90">
-        <ReactMarkdown>{result.markdown}</ReactMarkdown>
+        <ReactMarkdown components={markdownComponents}>{briefMarkdown}</ReactMarkdown>
       </div>
 
       {/* Sources & Citations */}
@@ -348,6 +394,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
           <ol className="flex flex-col gap-2">
             {uniqueSources.map((s, i) => (
               <li key={i} className="text-sm">
+                <span className="mr-1.5 text-ink/50">[{i + 1}]</span>
                 <a
                   href={s.url}
                   target="_blank"
@@ -368,18 +415,8 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
           <div className="mb-1 text-sm font-semibold text-ink">Export Documents</div>
 
           {/* Premium PDF Card */}
-          <div className="relative overflow-hidden rounded-xl border-2 border-[#FA0F00] bg-gradient-to-br from-red-50 to-white p-4">
-            <svg
-              className="absolute inset-x-0 bottom-0 h-7 w-full text-[#FA0F00]"
-              viewBox="0 0 400 40"
-              preserveAspectRatio="none"
-              shapeRendering="geometricPrecision"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M0,6 C160,6 240,34 400,34 L400,41 L0,41 Z" />
-            </svg>
-            <div className="relative z-10 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="relative overflow-hidden rounded-xl border-2 border-[#FA0F00] bg-gradient-to-br from-red-50 to-white px-4 pt-4">
+            <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
               <div className="flex items-center gap-4">
                 <PdfIcon className="h-12 w-12 shrink-0" />
                 <div>
@@ -402,21 +439,12 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
                 </button>
               </div>
             </div>
+            <div className="-mx-4 h-9 bg-[#FA0F00]" aria-hidden="true" />
           </div>
 
           {/* Premium Word Card */}
-          <div className="relative overflow-hidden rounded-xl border-2 border-[#185ABD] bg-gradient-to-br from-blue-50 to-white p-4">
-            <svg
-              className="absolute inset-x-0 bottom-0 h-7 w-full text-[#185ABD]"
-              viewBox="0 0 400 40"
-              preserveAspectRatio="none"
-              shapeRendering="geometricPrecision"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M0,6 C160,6 240,34 400,34 L400,41 L0,41 Z" />
-            </svg>
-            <div className="relative z-10 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="relative overflow-hidden rounded-xl border-2 border-[#185ABD] bg-gradient-to-br from-blue-50 to-white px-4 pt-4">
+            <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
               <div className="flex items-center gap-4">
                 <WordIcon className="h-12 w-12 shrink-0" />
                 <div>
@@ -433,6 +461,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
                 </button>
               </div>
             </div>
+            <div className="-mx-4 h-9 bg-[#185ABD]" aria-hidden="true" />
           </div>
 
           <div className="mt-2 text-center text-xs font-medium text-ink/40">
