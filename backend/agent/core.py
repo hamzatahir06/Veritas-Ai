@@ -149,31 +149,32 @@ def run_research(topic: str):
 def _run_tool_calls(toolset: Toolset, calls: list[tuple[str, dict]], sources: list[dict]):
     """
     Announce, run (in parallel), and report one turn's tool calls; returns
-    their text results in order.
+    their text results in call order, which is what the model expects.
 
-    `found` carries what that one search returned — a count and the titles and
-    URLs behind it, so the UI can expand the line into real links. The count is
-    derived from the list actually sent, so the two can never disagree. Rows
-    without a URL are dropped: nothing can link to them.
+    Each `found` is sent the moment its own search finishes, carrying the
+    query it answers so the UI can show it under that search. It holds a
+    count and the titles and URLs behind it; the count is derived from the
+    list actually sent, so the two can never disagree. Rows without a URL are
+    dropped: nothing can link to them.
     """
     for _, args in calls:
         yield {"type": "searching", "query": args["query"]}
 
-    results = toolset.run_many(calls, sources)
-
-    for (_, args), (_, rows) in zip(calls, results):
+    texts = [""] * len(calls)
+    for i, (text, rows) in toolset.run_many(calls, sources):
+        texts[i] = text
         found = [
             {"title": row.get("title", ""), "url": row["url"]}
             for row in rows if (row.get("url") or "").strip()
         ]
         yield {
             "type": "found",
-            "query": args["query"],
+            "query": calls[i][1]["query"],
             "count": len(found),
             "sources": found,
         }
 
-    return [text for text, _ in results]
+    return texts
 
 
 def _run_with_gemini(topic: str, toolset: Toolset, model: str):

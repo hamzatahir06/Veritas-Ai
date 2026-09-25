@@ -14,9 +14,9 @@ instead of spending search credits again.
 import inspect
 import json
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Iterator
 
 from tavily import TavilyClient
 
@@ -105,19 +105,23 @@ class Toolset:
 
     def run_many(
         self, calls: list[tuple[str, dict]], sources: list[dict],
-    ) -> list[tuple[str, list[dict]]]:
+    ) -> Iterator[tuple[int, tuple[str, list[dict]]]]:
         """
-        Run a turn's tool calls concurrently; results keep the calls' order.
+        Run a turn's tool calls concurrently, yielding (call index, (text, rows))
+        as each one finishes — so the UI can report a search the moment it's
+        done instead of waiting for the slowest.
 
-        Each entry is that call's (text, rows). Attribution has to come from
-        here because the calls share one `sources` list across threads, so
-        comparing its length before and after a call cannot say which search
-        contributed what.
+        Attribution has to come from here because the calls share one
+        `sources` list across threads, so comparing its length before and
+        after a call cannot say which search contributed what.
         """
         if len(calls) == 1:
-            return [self.run(*calls[0], sources)]
+            yield 0, self.run(*calls[0], sources)
+            return
         with ThreadPoolExecutor(max_workers=min(len(calls), MAX_PARALLEL_SEARCHES)) as pool:
-            return list(pool.map(lambda call: self.run(*call, sources), calls))
+            futures = {pool.submit(self.run, *call, sources): i for i, call in enumerate(calls)}
+            for future in as_completed(futures):
+                yield futures[future], future.result()
 
 
 def build_toolset(tavily_client: TavilyClient, topic: str) -> Toolset:

@@ -10,6 +10,34 @@ function domainOf(url: string): string {
   }
 }
 
+type Row = { event: StreamEvent; index: number; answered?: boolean }
+
+/**
+ * The trail in display order: each "N sources found" directly under the search
+ * it answers. Searches in one turn run in parallel and finish in any order, so
+ * a result is matched to the latest still-unanswered search with its query.
+ * `index` is the event's position in the stream — a stable key for the row.
+ */
+function underItsSearch(events: StreamEvent[]): Row[] {
+  const rows: Row[] = []
+  events.forEach((event, index) => {
+    if (event.type !== 'found') {
+      rows.push({ event, index })
+      return
+    }
+    let at = rows.length - 1
+    while (at >= 0 && !(rows[at].event.type === 'searching' && !rows[at].answered
+      && (rows[at].event as { query: string }).query === event.query)) at--
+    if (at < 0) {
+      rows.push({ event, index })
+      return
+    }
+    rows[at].answered = true
+    rows.splice(at + 1, 0, { event, index })
+  })
+  return rows
+}
+
 type StreamingProgressProps = {
   events: StreamEvent[]
   /** The run has finished: the trail stays expandable, but sources are text. */
@@ -35,12 +63,13 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
       <div className="mb-3 text-sm font-medium text-ink/60">{done ? 'Research steps' : 'Researching'}</div>
 
       <ul className="flex flex-col gap-2">
-        {events.map((event, i) => {
+        {underItsSearch(events).map(({ event, index: i, answered }) => {
           if (event.type === 'searching') {
             return (
               <li key={i} className="flex items-center gap-2 text-sm text-ink/80">
+                {/* Pulses only while this search is still running. */}
                 <span
-                  className={`h-1.5 w-1.5 rounded-full bg-brand ${done ? '' : 'animate-pulse'}`}
+                  className={`h-1.5 w-1.5 rounded-full bg-brand ${done || answered ? '' : 'animate-pulse'}`}
                 />
                 Searching: {event.query}
               </li>
