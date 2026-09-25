@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 
 type PromptBoxProps = {
   onSubmit: (topic: string) => void
-  onStop?: () => void
+  onStop: () => void
   /** A research run is in progress: input is locked and the button becomes "Stop Research". */
-  streaming?: boolean
+  streaming: boolean
 }
 
 export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProps) {

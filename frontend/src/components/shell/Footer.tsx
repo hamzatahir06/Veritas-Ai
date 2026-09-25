@@ -7,11 +7,12 @@ import { CONTACT_EMAIL, REPO_URL, WHATSAPP_DISPLAY, WHATSAPP_URL, linkTarget } f
 type FooterLink = { label: string; to: string; external?: boolean }
 
 const linkClass = 'text-sm text-white/55 transition-colors hover:text-brand'
+const headingClass = 'text-xs font-semibold tracking-[0.14em] text-white uppercase'
 
 function Column({ title, links }: { title: string; links: FooterLink[] }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold tracking-[0.14em] text-white uppercase">{title}</h3>
+      <h3 className={headingClass}>{title}</h3>
       <ul className="mt-5 space-y-3">
         {links.map(({ label, to, external }) => (
           <li key={label}>
@@ -90,7 +91,7 @@ export default function Footer() {
           </div>
 
           <div className="md:col-span-4">
-            <h3 className="text-xs font-semibold tracking-[0.14em] text-white uppercase">Get in touch</h3>
+            <h3 className={headingClass}>Get in touch</h3>
             <div className="mt-5 space-y-3">
               <ContactRow icon="mail" href={`mailto:${CONTACT_EMAIL}`}>
                 {CONTACT_EMAIL}

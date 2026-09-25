@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ListPage from '../components/shell/ListPage'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
 import { getJson } from '../lib/api'
@@ -32,28 +33,25 @@ export default function Sources() {
   if (sources.length === 0) return <PageMessage>No sources yet — start a research on Home.</PageMessage>
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-4xl flex-col gap-3">
-        <h1 className="mb-2 text-xl font-semibold text-ink">Sources</h1>
-        {sources.map((s) => (
-          <div key={s.id} className="rounded-xl border border-black/10 bg-white px-5 py-4">
-            <a
-              href={s.url}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-brand-dark underline decoration-brand/40 hover:decoration-brand"
-            >
-              {s.title || s.url}
-            </a>
-            <div className="mt-1 text-xs text-ink/40">
-              From{' '}
-              <Link to={`/projects/${s.project_id}`} className="underline hover:text-ink/60">
-                {s.projects?.topic}
-              </Link>
-            </div>
+    <ListPage title="Sources">
+      {sources.map((s) => (
+        <div key={s.id} className="rounded-xl border border-black/10 bg-white px-5 py-4">
+          <a
+            href={s.url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-brand-dark underline decoration-brand/40 hover:decoration-brand"
+          >
+            {s.title || s.url}
+          </a>
+          <div className="mt-1 text-xs text-ink/40">
+            From{' '}
+            <Link to={`/projects/${s.project_id}`} className="underline hover:text-ink/60">
+              {s.projects?.topic}
+            </Link>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      ))}
+    </ListPage>
   )
 }

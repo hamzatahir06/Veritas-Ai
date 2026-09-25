@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listProjects, deleteProject, type ProjectSummary } from '../lib/projects'
 import ProjectCard from '../components/research/ProjectCard'
+import ListPage from '../components/shell/ListPage'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
 
@@ -46,13 +47,10 @@ export default function Projects() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-4xl flex-col gap-3">
-        <h1 className="mb-2 text-xl font-semibold text-ink">Projects</h1>
-        {projects.map((p) => (
-          <ProjectCard key={p.id} project={p} onDelete={handleDelete} />
-        ))}
-      </div>
-    </div>
+    <ListPage title="Projects">
+      {projects.map((p) => (
+        <ProjectCard key={p.id} project={p} onDelete={handleDelete} />
+      ))}
+    </ListPage>
   )
 }

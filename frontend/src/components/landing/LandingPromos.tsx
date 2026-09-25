@@ -73,9 +73,7 @@ function useInView<T extends HTMLElement>() {
   return [ref, inView] as const
 }
 
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /** Counts from 0 up to `value` over ~1.1s once `play` turns true. */
 function CountUp({ value, decimals = 0, play }: { value: number; decimals?: number; play: boolean }) {
@@ -120,25 +118,45 @@ function CompareBar({
   red?: boolean
   play: boolean
 }) {
-  const ink = red ? 'text-red-600' : 'text-ink'
+  const tone = red
+    ? { label: 'text-red-600', bar: 'bg-red-500', value: 'text-red-600' }
+    : { label: 'text-ink/70', bar: 'bg-brand', value: 'text-ink' }
   return (
     <div className="flex items-center gap-3">
-      <span className={`w-24 shrink-0 text-xs font-semibold sm:w-28 sm:text-sm ${red ? 'text-red-600' : 'text-ink/70'}`}>
+      <span className={`w-24 shrink-0 text-xs font-semibold sm:w-28 sm:text-sm ${tone.label}`}>
         {label}
       </span>
       <span className="relative h-6 flex-1 overflow-hidden rounded-md bg-black/[0.04] sm:h-7">
         <span
-          className={`absolute inset-y-0 left-0 min-w-[4px] rounded-md transition-[width] duration-[1100ms] ease-out motion-reduce:transition-none ${
-            red ? 'bg-red-500' : 'bg-brand'
-          }`}
+          className={`absolute inset-y-0 left-0 min-w-[4px] rounded-md transition-[width] duration-[1100ms] ease-out motion-reduce:transition-none ${tone.bar}`}
           style={{ width: play ? `${pct}%` : '0%' }}
         />
       </span>
-      <span className={`w-16 shrink-0 text-right text-xs font-bold tabular-nums sm:text-sm ${ink}`}>
+      <span className={`w-16 shrink-0 text-right text-xs font-bold tabular-nums sm:text-sm ${tone.value}`}>
         {valueLabel}
       </span>
     </div>
   )
+}
+
+/** Class sets for the two ComparisonCard palettes, keyed by `pain`. */
+const PALETTES = {
+  pain: {
+    card: 'border-red-500/80 bg-red-50/40',
+    heading: 'text-red-700',
+    badge: 'bg-red-600',
+    list: 'text-red-950/80',
+    stat: 'text-red-600',
+    mark: '✕',
+  },
+  solution: {
+    card: 'border-brand bg-brand/5',
+    heading: 'text-brand-dark',
+    badge: 'bg-brand',
+    list: 'text-ink/80',
+    stat: 'text-brand-dark',
+    mark: '✓',
+  },
 }
 
 /** The red "pain" card and the teal "solution" card — same shape, different palette. */
@@ -151,23 +169,24 @@ function ComparisonCard({
   heading: string
   items: [string, string][]
 }) {
+  const p = PALETTES[pain ? 'pain' : 'solution']
   return (
-    <div className={`flex flex-col rounded-2xl border-2 p-6 shadow-sm ${pain ? 'border-red-500/80 bg-red-50/40' : 'border-brand bg-brand/5'}`}>
-      <div className={`mb-4 flex items-center gap-2 font-extrabold ${pain ? 'text-red-700' : 'text-brand-dark'}`}>
+    <div className={`flex flex-col rounded-2xl border-2 p-6 shadow-sm ${p.card}`}>
+      <div className={`mb-4 flex items-center gap-2 font-extrabold ${p.heading}`}>
         <h4 className="text-base sm:text-lg">{heading}</h4>
-        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs text-white ${pain ? 'bg-red-600' : 'bg-brand'}`}>
-          {pain ? '✕' : '✓'}
+        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs text-white ${p.badge}`}>
+          {p.mark}
         </span>
       </div>
-      <ul className={`flex flex-col gap-3.5 text-xs sm:text-sm font-medium ${pain ? 'text-red-950/80' : 'text-ink/80'}`}>
+      <ul className={`flex flex-col gap-3.5 text-xs sm:text-sm font-medium ${p.list}`}>
         {items.map(([stat, detail]) => (
           <li key={stat} className="flex items-start gap-2.5">
-            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] text-white ${pain ? 'bg-red-600' : 'bg-brand'}`}>
-              {pain ? '✕' : '✓'}
+            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] text-white ${p.badge}`}>
+              {p.mark}
             </span>
             <span className="flex flex-col gap-0.5">
               {/* number leads — the stat is the hook, the line below is context */}
-              <span className={`font-serif text-lg font-bold tabular-nums leading-none sm:text-xl ${pain ? 'text-red-600' : 'text-brand-dark'}`}>
+              <span className={`font-serif text-lg font-bold tabular-nums leading-none sm:text-xl ${p.stat}`}>
                 {stat}
               </span>
               <span>{detail}</span>

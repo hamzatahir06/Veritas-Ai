@@ -27,6 +27,35 @@ function Feature({ children, soon = false }: { children: ReactNode; soon?: boole
   )
 }
 
+/** A plan card's content above its button: name + badge, blurb, monthly price, feature list. */
+function PlanBody({ name, badge, badgeClass, blurb, price, children }: {
+  name: string
+  badge: string
+  badgeClass: string
+  blurb: string
+  price: string
+  children: ReactNode
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-ink">{name}</h2>
+        <span className={badgeClass}>{badge}</span>
+      </div>
+      <p className="mt-2 text-xs text-ink/60">{blurb}</p>
+
+      <div className="mt-6 flex items-baseline gap-1">
+        <span className="text-4xl font-extrabold text-ink">{price}</span>
+        <span className="text-sm font-medium text-ink/50">/ month</span>
+      </div>
+
+      <div className="my-6 border-t border-black/5" />
+
+      <ul className="space-y-3.5 text-sm text-ink/80">{children}</ul>
+    </div>
+  )
+}
+
 export default function Pricing() {
   const { isSignedIn, accessToken, user } = usePageContext()
   const [phase, setPhase] = useState<Phase>('idle')
@@ -69,34 +98,21 @@ export default function Pricing() {
 
           {/* 1. FREE PLAN */}
           <div className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-6 shadow-xs sm:p-8">
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-ink">Free Starter</h2>
-                <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink/70">
-                  Free Forever
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-ink/60">
-                A brief a day — fully cited, saved, and exportable.
-              </p>
-
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-ink">$0</span>
-                <span className="text-sm font-medium text-ink/50">/ month</span>
-              </div>
-
-              <div className="my-6 border-t border-black/5" />
-
-              <ul className="space-y-3.5 text-sm text-ink/80">
-                <Feature>
-                  <strong>3 research briefs</strong> per day
-                </Feature>
-                <Feature>Web search and peer-reviewed literature, on every run</Feature>
-                <Feature>IEEE citations at the claim, with the full source list</Feature>
-                <Feature>PDF and Word (.docx) download of every brief</Feature>
-                <Feature>Saved projects and a searchable source library</Feature>
-              </ul>
-            </div>
+            <PlanBody
+              name="Free Starter"
+              badge="Free Forever"
+              badgeClass="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink/70"
+              blurb="A brief a day — fully cited, saved, and exportable."
+              price="$0"
+            >
+              <Feature>
+                <strong>3 research briefs</strong> per day
+              </Feature>
+              <Feature>Web search and peer-reviewed literature, on every run</Feature>
+              <Feature>IEEE citations at the claim, with the full source list</Feature>
+              <Feature>PDF and Word (.docx) download of every brief</Feature>
+              <Feature>Saved projects and a searchable source library</Feature>
+            </PlanBody>
 
             <Link
               to="/"
@@ -113,41 +129,28 @@ export default function Pricing() {
               Most Popular
             </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-ink">Pro Researcher</h2>
-                <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold text-brand">
-                  $9 / mo
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-ink/60">
-                For the weeks the research doesn't stop — same depth on every brief, far more of them.
-              </p>
-
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-ink">$9</span>
-                <span className="text-sm font-medium text-ink/50">/ month</span>
-              </div>
-
-              <div className="my-6 border-t border-black/5" />
-
-              <ul className="space-y-3.5 text-sm text-ink/80">
-                <Feature>
-                  <strong>18 research briefs</strong> per day — 6× the free cap
-                </Feature>
-                <Feature>
-                  <strong>Everything in Free Starter</strong> — same search depth, same citations,
-                  same PDF and Word export, on every one of them
-                </Feature>
-                <Feature>
-                  <strong>Guaranteed capacity at peak times</strong> — your runs stay on the top
-                  research model instead of falling back to the lighter one
-                </Feature>
-                <Feature soon>
-                  Source-list export (BibTeX / CSV) for Zotero, Mendeley, and EndNote
-                </Feature>
-              </ul>
-            </div>
+            <PlanBody
+              name="Pro Researcher"
+              badge="$9 / mo"
+              badgeClass="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold text-brand"
+              blurb="For the weeks the research doesn't stop — same depth on every brief, far more of them."
+              price="$9"
+            >
+              <Feature>
+                <strong>18 research briefs</strong> per day — 6× the free cap
+              </Feature>
+              <Feature>
+                <strong>Everything in Free Starter</strong> — same search depth, same citations,
+                same PDF and Word export, on every one of them
+              </Feature>
+              <Feature>
+                <strong>Guaranteed capacity at peak times</strong> — your runs stay on the top
+                research model instead of falling back to the lighter one
+              </Feature>
+              <Feature soon>
+                Source-list export (BibTeX / CSV) for Zotero, Mendeley, and EndNote
+              </Feature>
+            </PlanBody>
 
             <div className="mt-8">
               {phase === 'done' ? (
