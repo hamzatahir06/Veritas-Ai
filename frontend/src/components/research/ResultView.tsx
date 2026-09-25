@@ -28,10 +28,18 @@ type ResultViewProps = {
   accessToken?: string
 }
 
-// Helper: Convert basic markdown constructs to formatted HTML for documents
+// A run of IEEE markers plus the space before it (" [16], [17]"), never a
+// link "[1](url)". 【n】 too: briefs saved before the backend normalised it.
+// Mirrors strip_citations() in backend/services/document_common.py.
+const CITATION_GROUP =
+  /\s*(?:\[\d+(?:\s*,\s*\d+)*\]|【\s*\d+\s*】)(?:\s*,?\s*(?:\[\d+(?:\s*,\s*\d+)*\]|【\s*\d+\s*】))*(?!\()/g
+
+// Helper: Convert basic markdown constructs to formatted HTML for documents.
+// Documents carry no in-text citations; the Sources list follows the body.
 function markdownToFormattedHtml(md: string): string {
   if (!md) return ''
   return md
+    .replace(CITATION_GROUP, '')
     .replace(/^### (.*$)/gim, '<h3 style="font-size:13pt; color:#334155; margin-top:14px; margin-bottom:6px;">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 style="font-size:16pt; color:#1e293b; margin-top:20px; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">$1</h2>')
     .replace(/^# (.*$)/gim, '<h1 style="font-size:20pt; color:#0f172a; margin-bottom:12px;">$1</h1>')
@@ -48,16 +56,17 @@ const CITE_HREF = '#cite-'
 
 /**
  * Mark IEEE citations like "[3]" as links; the `a` renderer below points each
- * one at its source's URL. Only numbers that have an entry are linked, and an existing markdown
- * link or reference definition ("[3](…)", "[3]:") is left alone.
+ * one at its source's URL. A number with no source entry can't link anywhere,
+ * so it is dropped with the separator before it rather than left as dead
+ * text. An existing markdown link or reference definition ("[3](…)", "[3]:")
+ * is left alone. 【n】 is accepted too, as above.
  */
 function linkCitations(md: string, sourceCount: number): string {
-  // 【n】 is accepted too: briefs saved before the backend normalised it.
-  return md.replace(/(?:\[(\d+)\]|【\s*(\d+)\s*】)(?![(:])/g, (match, bracket?: string, lenticular?: string) => {
-    const n = (bracket ?? lenticular) as string
-    const index = Number(n)
-    return index >= 1 && index <= sourceCount ? `[\\[${n}\\]](${CITE_HREF}${n})` : match
-  })
+  return md.replace(/(\s*,?\s*)(?:\[(\d+)\]|【\s*(\d+)\s*】)(?![(:])/g,
+    (_match, separator: string, bracket?: string, lenticular?: string) => {
+      const n = Number(bracket ?? lenticular)
+      return n >= 1 && n <= sourceCount ? `${separator}[\\[${n}\\]](${CITE_HREF}${n})` : ''
+    })
 }
 
 export default function ResultView({ result, accessToken }: ResultViewProps) {
