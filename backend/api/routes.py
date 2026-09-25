@@ -20,15 +20,28 @@ from services.storage import (
 router = APIRouter()
 
 
+# Public endpoints take bounded input, so one request can't hand the agent or a
+# renderer an arbitrarily large job.
+MAX_TOPIC = 2_000
+
+
 class ResearchRequest(BaseModel):
-    topic: str
+    topic: str = Field(max_length=MAX_TOPIC)
+
+
+class DocumentSource(BaseModel):
+    # Exactly the fields build_references() reads; anything else is ignored.
+    url: str = Field(default="", max_length=2_000)
+    title: str = Field(default="", max_length=1_000)
+    authors: str = Field(default="", max_length=1_000)
+    venue: str = Field(default="", max_length=500)
+    published: str = Field(default="", max_length=100)
 
 
 class DocumentRequest(BaseModel):
-    # Bounded so a public render endpoint can't be handed an arbitrarily large job.
-    topic: str = Field(max_length=500)
+    topic: str = Field(max_length=MAX_TOPIC)
     markdown: str = Field(min_length=1, max_length=60_000)
-    sources: list[dict] = Field(default_factory=list, max_length=60)
+    sources: list[DocumentSource] = Field(default_factory=list, max_length=60)
     provider: str = Field(default="", max_length=100)
 
 
@@ -132,12 +145,18 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                 if user:
                     try:
                         project_id = save_project(supabase, user.id, result)
-                        _store_documents(supabase, user.id, project_id, result)
                     except Exception as e:
                         # Non-fatal: the brief still streams to the client below.
                         # Distinct from "error" (a fatal run failure) so the UI
                         # can keep the result and just flag the missed save.
-                        yield _sse_event({"type": "save_failed", "error": f"Save/Upload failed: {str(e)}"})
+                        yield _sse_event({"type": "save_failed", "error": f"Save failed: {e}"})
+                if project_id:
+                    try:
+                        _store_documents(supabase, user.id, project_id, result)
+                    except Exception as e:
+                        # The project IS saved; download_document() renders any
+                        # missing file on first download, so this isn't a failed save.
+                        print(f"[documents] upload failed for project {project_id}: {e}")
 
                 yield _sse_event({
                     "type": "done",
@@ -217,7 +236,8 @@ def render_document(format: str, payload: DocumentRequest):
     if format not in DOCUMENT_MIME:
         raise HTTPException(status_code=400, detail="Format must be 'docx' or 'pdf'")
 
-    result = ResearchResult(payload.topic, payload.markdown, payload.sources, payload.provider)
+    sources = [s.model_dump() for s in payload.sources]
+    result = ResearchResult(payload.topic, payload.markdown, sources, payload.provider)
     filename = document_filename(payload.topic, format)
     return Response(
         _render(result, format),

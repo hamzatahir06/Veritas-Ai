@@ -162,7 +162,8 @@ class Block:
 
 
 def _is_table_row(line: str) -> bool:
-    return line.startswith("|") and line.endswith("|")
+    # Only the leading pipe is required: models often drop the trailing one.
+    return line.startswith("|")
 
 
 def _parse_table_row(line: str) -> list[str]:
@@ -322,7 +323,10 @@ def normalise_headings(blocks: list[Block]) -> list[Block]:
     which without re-basing numbers them 0.1, 0.2 — the level-1 counter never
     advances — and suppresses any styling reserved for a top-level heading.
     """
-    if blocks and blocks[0].type == "heading" and blocks[0].level == 1 and len(blocks) > 1:
+    # Only a lone level-1 heading is a title. A model that writes every section
+    # as '#' has several, and dropping the first would lose "Executive Summary".
+    top_level = sum(1 for b in blocks if b.type == "heading" and b.level == 1)
+    if blocks and blocks[0].type == "heading" and blocks[0].level == 1 and top_level == 1 and len(blocks) > 1:
         blocks = blocks[1:]
 
     levels = [b.level for b in blocks if b.type == "heading"]

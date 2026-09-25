@@ -175,6 +175,9 @@ def _section_heading(pdf: BriefPDF, label: str, level: int):
 def _bullet(pdf: BriefPDF, block: Block):
     indent = T.BULLET_INDENT * block.level
     marker = block.marker if block.ordered else "•"
+    # The marker is drawn before the text flows; without this, a bullet at the
+    # page foot leaves its "•" behind while the text starts the next page.
+    pdf.keep_with_next(T.LINE)
     pdf.set_x(pdf.l_margin + indent - T.BULLET_INDENT)
     pdf.set_font(T.BODY_FAMILY, size=T.SIZE_BODY)
     pdf.set_text_color(*T.INK)

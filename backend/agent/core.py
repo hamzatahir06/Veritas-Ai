@@ -41,7 +41,8 @@ GROQ_RESULT_CHARS = 3000  # per tool result — results are ranked best-first, s
 STOP_SEARCHING = "Stop searching now and write the final research brief in markdown using only the information already gathered."
 
 
-_LENTICULAR_CITE = re.compile(r"【\s*(\d+)\s*】")
+# 【7】, and gpt-oss's line-anchored form 【7†L12-L20】.
+_LENTICULAR_CITE = re.compile(r"【\s*(\d+)[^】]*】")
 
 
 def _require_markdown(get_text, provider: str) -> str:

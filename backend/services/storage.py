@@ -34,7 +34,7 @@ def save_project(supabase: Client, user_id: str, result: ResearchResult) -> str:
             {
                 "project_id": project_id,
                 "position": position,
-                "query": s["query"],
+                "query": s.get("query", ""),
                 "title": s.get("title", ""),
                 "url": s.get("url", ""),
                 "snippet": s.get("snippet", ""),
@@ -45,7 +45,13 @@ def save_project(supabase: Client, user_id: str, result: ResearchResult) -> str:
             }
             for position, s in enumerate(result.sources, start=1)
         ]
-        supabase.table("sources").insert(rows).execute()
+        try:
+            supabase.table("sources").insert(rows).execute()
+        except Exception:
+            # Don't leave a project without its sources in the user's list:
+            # remove it, so the caller reports one clean failed save.
+            supabase.table("projects").delete().eq("id", project_id).execute()
+            raise
 
     return project_id
 

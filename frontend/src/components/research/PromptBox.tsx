@@ -57,6 +57,7 @@ export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProp
           }
         }}
         placeholder="What would you like to research?"
+        maxLength={2000}  // matches MAX_TOPIC in backend/api/routes.py
         disabled={streaming}
         className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink/40 disabled:opacity-50 caret-brand"
       />

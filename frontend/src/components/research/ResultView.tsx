@@ -27,7 +27,7 @@ const CITE_HREF = '#cite-'
  * is left alone. 【n】 is accepted too: briefs saved before the backend normalised it.
  */
 function linkCitations(md: string, sourceCount: number): string {
-  return md.replace(/(\s*,?\s*)(?:\[(\d+)\]|【\s*(\d+)\s*】)(?![(:])/g,
+  return md.replace(/(\s*,?\s*)(?:\[(\d+)\]|【\s*(\d+)[^】]*】)(?![(:])/g,
     (_match, separator: string, bracket?: string, lenticular?: string) => {
       const n = Number(bracket ?? lenticular)
       return n >= 1 && n <= sourceCount ? `${separator}[\\[${n}\\]](${CITE_HREF}${n})` : ''
