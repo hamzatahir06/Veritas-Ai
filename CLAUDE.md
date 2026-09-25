@@ -66,8 +66,9 @@ cd frontend && npm install && npm run dev      # localhost:5173
 - **SSE events** (`text/event-stream`): `chat_reply · searching · found · limit_reached · provider_failed · save_failed · done · error`.
   - Non-research input → `chat_reply` only, then the stream ends. No `done`, nothing saved.
   - Research → provider loop, ends with `done` = `{project_id, saved, topic, markdown, sources, provider}`.
-- **Provider fallback is the design:** each provider loop is self-contained; any exception →
-  `provider_failed` → next provider. `_require_markdown()` converts an empty/blocked model
+- **Provider fallback is the design:** any exception → `provider_failed` → next provider, which
+  continues from the research already gathered (`Gathered` in `agent/core.py`: one sources list
+  and citation numbering for the whole run) instead of starting over. `_require_markdown()` converts an empty/blocked model
   response into a fallback trigger — `result.markdown` must never be `None`/`""`.
 - Authed `done` → `save_project(...)`, then docx+pdf generated and uploaded to Storage. The
   writers rebuild the `## Sources` section from real results; the model is told to leave it empty.

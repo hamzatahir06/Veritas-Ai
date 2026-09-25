@@ -10,7 +10,8 @@ overloaded. Rather than hard-wiring one model, run_research tries an ordered
 list of independent, self-contained provider loops (best Gemini models first,
 Groq last) and falls through to the next on any failure — a used-up quota, a
 missing key, a deprecated model, a network blip. Reordering is a one-line
-change to GEMINI_MODELS.
+change to GEMINI_MODELS. A fallback doesn't start over: it is handed the
+research already gathered (see Gathered) and continues from there.
 """
 
 import json
@@ -37,6 +38,7 @@ GEMINI_TIMEOUT_MS = 90_000  # a long evidence-heavy synthesis can take well over
 GROQ_MODEL = "openai/gpt-oss-120b"
 GROQ_MAX_ITERATIONS = 3  # Groq's free tier has a much smaller token budget
 GROQ_RESULT_CHARS = 3000  # per tool result — results are ranked best-first, so trimming drops the weakest
+GROQ_CARRYOVER_CHARS = 12_000  # research carried over from a failed attempt, across all its searches
 
 STOP_SEARCHING = "Stop searching now and write the final research brief in markdown using only the information already gathered."
 
@@ -125,19 +127,18 @@ def run_research(topic: str):
         yield {"type": "chat_reply", "message": reply}
         return
 
-    # One toolset for the whole run, so a fallback provider reuses cached searches.
+    # One toolset and one record of what's been found for the whole run: a
+    # fallback provider continues from the research already gathered instead
+    # of starting over, and citation numbers stay the same across attempts.
     toolset = build_toolset(TavilyClient(api_key=get_settings().tavily_api_key), topic)
+    gathered = Gathered()
     providers = [(model, partial(_run_with_gemini, model=model)) for model in GEMINI_MODELS]
     providers.append(("groq", _run_with_groq))
 
     last_error = None
     for name, provider_fn in providers:
-        # Each attempt builds its own sources list, so its citation numbers
-        # must start at [1] too — a failed attempt's numbers would otherwise
-        # leak in and point past the end of the reference list.
-        toolset.reset_citations()
         try:
-            yield from provider_fn(topic, toolset)
+            yield from provider_fn(topic, toolset, gathered)
             return
         except Exception as e:
             yield {"type": "provider_failed", "provider": name, "error": str(e)}
@@ -146,7 +147,40 @@ def run_research(topic: str):
     yield {"type": "error", "message": f"All providers failed. Last error: {last_error}"}
 
 
-def _run_tool_calls(toolset: Toolset, calls: list[tuple[str, dict]], sources: list[dict]):
+CONTINUE_NOTE = (
+    "An earlier attempt already ran the searches below. Their sources keep the [n] numbers "
+    "shown, so cite them by those numbers. Search again only for what they don't cover; if "
+    "they are enough, write the brief now."
+)
+
+
+@dataclass
+class Gathered:
+    """
+    Everything the run has found so far, shared by every provider attempt.
+
+    `sources` is the run's one reference list, in citation-number order.
+    `results` is each search's (query, result text) — what a fallback provider
+    is shown so it picks up where the failed one stopped.
+    """
+    sources: list[dict] = field(default_factory=list)
+    results: list[tuple[str, str]] = field(default_factory=list)
+
+    def opening(self, topic: str, max_chars: int | None = None) -> str:
+        """The first user message: the topic, plus any research already gathered.
+
+        `max_chars` caps the carried-over text for a provider with a small
+        context budget. Each result is ranked best-first, so trimming its tail
+        drops the weakest sources.
+        """
+        if not self.results:
+            return f"Research topic: {topic}"
+        per_result = max_chars // len(self.results) if max_chars else None
+        blocks = "\n\n".join(f'Results for "{query}":\n{text[:per_result]}' for query, text in self.results)
+        return f"Research topic: {topic}\n\n{CONTINUE_NOTE}\n\n{blocks}"
+
+
+def _run_tool_calls(toolset: Toolset, calls: list[tuple[str, dict]], gathered: Gathered):
     """
     Announce, run (in parallel), and report one turn's tool calls; returns
     their text results in call order, which is what the model expects.
@@ -161,8 +195,9 @@ def _run_tool_calls(toolset: Toolset, calls: list[tuple[str, dict]], sources: li
         yield {"type": "searching", "query": args["query"]}
 
     texts = [""] * len(calls)
-    for i, (text, rows) in toolset.run_many(calls, sources):
+    for i, (text, rows) in toolset.run_many(calls, gathered.sources):
         texts[i] = text
+        gathered.results.append((calls[i][1]["query"], text))
         found = [
             {"title": row.get("title", ""), "url": row["url"]}
             for row in rows if (row.get("url") or "").strip()
@@ -177,12 +212,11 @@ def _run_tool_calls(toolset: Toolset, calls: list[tuple[str, dict]], sources: li
     return texts
 
 
-def _run_with_gemini(topic: str, toolset: Toolset, model: str):
+def _run_with_gemini(topic: str, toolset: Toolset, gathered: Gathered, model: str):
     client = genai.Client(
         api_key=get_settings().gemini_api_key,
         http_options=gtypes.HttpOptions(timeout=GEMINI_TIMEOUT_MS),
     )
-    sources: list[dict] = []
     system_prompt = build_system_prompt()
 
     tool = gtypes.Tool(function_declarations=[
@@ -198,7 +232,7 @@ def _run_with_gemini(topic: str, toolset: Toolset, model: str):
         system_instruction=system_prompt,
         automatic_function_calling=gtypes.AutomaticFunctionCallingConfig(disable=True),
     )
-    contents = [gtypes.Content(role="user", parts=[gtypes.Part(text=f"Research topic: {topic}")])]
+    contents = [gtypes.Content(role="user", parts=[gtypes.Part(text=gathered.opening(topic))])]
 
     for _ in range(GEMINI_MAX_ITERATIONS):
         response = client.models.generate_content(model=model, contents=contents, config=config)
@@ -206,7 +240,7 @@ def _run_with_gemini(topic: str, toolset: Toolset, model: str):
         calls = response.function_calls
         if not calls:
             markdown = _require_markdown(lambda: response.text, model)
-            yield {"type": "done", "result": ResearchResult(topic, markdown, sources, model)}
+            yield {"type": "done", "result": ResearchResult(topic, markdown, gathered.sources, model)}
             return
 
         if not response.candidates:
@@ -214,7 +248,7 @@ def _run_with_gemini(topic: str, toolset: Toolset, model: str):
         contents.append(response.candidates[0].content)
 
         turn = [(call.name, _tool_args(call.args, topic)) for call in calls]
-        results = yield from _run_tool_calls(toolset, turn, sources)
+        results = yield from _run_tool_calls(toolset, turn, gathered)
         contents.append(gtypes.Content(role="user", parts=[
             gtypes.Part.from_function_response(name=name, response={"result": text})
             for (name, _), text in zip(turn, results)
@@ -228,19 +262,18 @@ def _run_with_gemini(topic: str, toolset: Toolset, model: str):
         config=gtypes.GenerateContentConfig(system_instruction=f"{system_prompt}\n\nCRITICAL INSTRUCTION: {STOP_SEARCHING}"),
     )
     markdown = _require_markdown(lambda: final.text, model)
-    yield {"type": "done", "result": ResearchResult(topic, markdown, sources, model)}
+    yield {"type": "done", "result": ResearchResult(topic, markdown, gathered.sources, model)}
 
 
-def _run_with_groq(topic: str, toolset: Toolset):
+def _run_with_groq(topic: str, toolset: Toolset, gathered: Gathered):
     settings = get_settings()
     if not settings.groq_api_key:
         raise RuntimeError("GROQ_API_KEY is not set")
 
     client = OpenAI(api_key=settings.groq_api_key, base_url=GROQ_BASE_URL)
-    sources: list[dict] = []
     messages = [
         {"role": "system", "content": build_system_prompt()},
-        {"role": "user", "content": f"Research topic: {topic}"},
+        {"role": "user", "content": gathered.opening(topic, max_chars=GROQ_CARRYOVER_CHARS)},
     ]
 
     for _ in range(GROQ_MAX_ITERATIONS):
@@ -251,7 +284,7 @@ def _run_with_groq(topic: str, toolset: Toolset):
 
         if not choice.tool_calls:
             markdown = _require_markdown(lambda: choice.content, "Groq")
-            yield {"type": "done", "result": ResearchResult(topic, markdown, sources, "groq")}
+            yield {"type": "done", "result": ResearchResult(topic, markdown, gathered.sources, "groq")}
             return
 
         messages.append({
@@ -261,7 +294,7 @@ def _run_with_groq(topic: str, toolset: Toolset):
         })
 
         turn = [(tc.function.name, _tool_args(tc.function.arguments, topic)) for tc in choice.tool_calls]
-        results = yield from _run_tool_calls(toolset, turn, sources)
+        results = yield from _run_tool_calls(toolset, turn, gathered)
         messages.extend(
             {"role": "tool", "tool_call_id": tc.id, "content": text[:GROQ_RESULT_CHARS]}
             for tc, text in zip(choice.tool_calls, results)
@@ -271,4 +304,4 @@ def _run_with_groq(topic: str, toolset: Toolset):
     messages.append({"role": "user", "content": STOP_SEARCHING})
     final = client.chat.completions.create(model=GROQ_MODEL, messages=messages, timeout=30)
     markdown = _require_markdown(lambda: final.choices[0].message.content, "Groq")
-    yield {"type": "done", "result": ResearchResult(topic, markdown, sources, "groq")}
+    yield {"type": "done", "result": ResearchResult(topic, markdown, gathered.sources, "groq")}
