@@ -30,6 +30,7 @@ backend/
   services/storage.py   # Supabase persistence (projects, sources, waitlist, doc upload)
   services/document_common.py         # markdown → Block parser (shared)
   services/{docx,pdf}_writer.py        # Block → .docx / .pdf
+  services/charts.py                   # table → bar chart PNG, only when the data is unambiguous
 frontend/src/
   lib/         api.ts (streamResearch + API_BASE), supabase.ts
   hooks/       useAuth.ts, useResearchThread.ts
@@ -52,7 +53,11 @@ cd frontend && npm install && npm run dev      # localhost:5173
 ## Backend rules
 
 - **`/research` uses `get_optional_user`** — must stay guest-reachable. Every other route
-  (`/projects`, `/sources`, `/me`, downloads) uses `get_current_user`.
+  (`/projects`, `/sources`, `/me`, downloads) uses `get_current_user`, except
+  **`POST /documents/{format}`**: public on purpose (guests' PDF/Word), renders in memory, no reads/writes.
+- **One document writer for everyone.** Guests and signed-in users get the same PDF/Word from
+  `services/{pdf,docx}_writer.py`; the frontend never builds documents itself. Charts come only
+  from `services/charts.py` (strict gate over the brief's own tables) — the model never draws.
 - **Guests (`user is None`) get zero DB writes** — stream the full brief, persist nothing.
 - **A failed save must not kill the stream** — emit `{"type":"save_failed","error":…}` and keep
   streaming. `save_failed` ≠ `error` (which is fatal).

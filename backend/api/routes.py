@@ -1,10 +1,11 @@
 # uvicorn main:app --reload --port 8000
+import io
 import json
 import tempfile
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse, RedirectResponse
-from pydantic import BaseModel, EmailStr
+from fastapi.responses import Response, StreamingResponse, RedirectResponse
+from pydantic import BaseModel, EmailStr, Field
 
 from core.auth import get_current_user, get_optional_user, get_supabase
 from agent.core import run_research, ResearchResult
@@ -15,8 +16,8 @@ from services.storage import (
     add_to_waitlist, list_sources,
     upload_document, get_document_url, save_document_paths
 )
-from services.docx_writer import save_research_as_docx
-from services.pdf_writer import save_research_as_pdf
+from services.docx_writer import build_docx, save_research_as_docx
+from services.pdf_writer import build_pdf, save_research_as_pdf
 from services.brief_review import review as review_brief
 from services.document_common import parse_markdown, document_filename
 
@@ -25,6 +26,20 @@ router = APIRouter()
 
 class ResearchRequest(BaseModel):
     topic: str
+
+
+class DocumentRequest(BaseModel):
+    # Bounded so a public render endpoint can't be handed an arbitrarily large job.
+    topic: str = Field(max_length=500)
+    markdown: str = Field(min_length=1, max_length=60_000)
+    sources: list[dict] = Field(default_factory=list, max_length=60)
+    provider: str = Field(default="", max_length=100)
+
+
+DOCUMENT_MIME = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
 
 
 class WaitlistRequest(BaseModel):
@@ -154,7 +169,7 @@ def download_document(
     supabase=Depends(get_supabase),
 ):
     """Returns a short-lived signed URL. Generates legacy documents on-the-fly if missing."""
-    if format not in ("docx", "pdf"):
+    if format not in DOCUMENT_MIME:
         raise HTTPException(status_code=400, detail="Format must be 'docx' or 'pdf'")
 
     project = get_project(supabase, user.id, project_id)
@@ -193,6 +208,34 @@ def download_document(
 
     signed_url = get_document_url(supabase, path, download_as=filename)
     return RedirectResponse(url=signed_url)
+
+
+@router.post("/documents/{format}")
+def render_document(format: str, payload: DocumentRequest):
+    """
+    Renders a brief the client already holds into a .pdf / .docx, in memory.
+
+    Public on purpose: it is how guests download their brief, so they get the
+    same document as signed-in users. It reads and writes nothing — no DB, no
+    Storage — which keeps the "guests get zero writes" rule.
+    """
+    if format not in DOCUMENT_MIME:
+        raise HTTPException(status_code=400, detail="Format must be 'docx' or 'pdf'")
+
+    result = ResearchResult(payload.topic, payload.markdown, payload.sources, payload.provider)
+    if format == "pdf":
+        content = bytes(build_pdf(result).output())
+    else:
+        buffer = io.BytesIO()
+        build_docx(result).save(buffer)
+        content = buffer.getvalue()
+
+    filename = document_filename(payload.topic, format)
+    return Response(
+        content,
+        media_type=DOCUMENT_MIME[format],
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/projects")

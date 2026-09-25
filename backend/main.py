@@ -12,6 +12,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Lets the browser read the server-chosen filename of a rendered document.
+    expose_headers=["Content-Disposition"],
 )
 
 @app.get("/")
