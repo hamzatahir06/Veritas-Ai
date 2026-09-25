@@ -22,11 +22,11 @@ from google import genai
 from google.genai import types as gtypes
 from openai import OpenAI
 from tavily import TavilyClient
-from agent.classifier import classify
 
-from core.config import get_settings
-from agent.toolset import Toolset, build_toolset
+from agent.classifier import classify
 from agent.prompts import build_system_prompt
+from agent.toolset import Toolset, build_toolset
+from core.config import GROQ_BASE_URL, get_settings
 
 # Newest first. Each model has a separate free-tier quota, so falling through
 # the list also multiplies the daily research capacity.
@@ -66,9 +66,19 @@ def _require_markdown(get_text, provider: str) -> str:
     return _LENTICULAR_CITE.sub(r"[\1]", markdown)
 
 
-def _tool_args(raw: dict | None, topic: str) -> dict:
-    """A tool call's arguments, with the research topic as a fallback query."""
-    args = dict(raw or {})
+def _tool_args(raw: dict | str | None, topic: str) -> dict:
+    """
+    A tool call's arguments, with the research topic as a fallback query.
+
+    Groq hands them over as a JSON string that is occasionally malformed; that
+    degrades to "search the topic" instead of failing the whole provider.
+    """
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw or "{}")
+        except json.JSONDecodeError:
+            raw = None
+    args = dict(raw) if isinstance(raw, dict) else {}
     if not isinstance(args.get("query"), str) or not args["query"].strip():
         args["query"] = topic
     return args
@@ -95,7 +105,7 @@ def run_research(topic: str):
     the same event shapes no matter which provider ends up serving it:
       {"type": "chat_reply", "message": str}   # non-research message; stream ends here
       {"type": "searching", "query": str}
-      {"type": "found", "query": str, "count": int}
+      {"type": "found", "query": str, "count": int, "sources": [{"title", "url"}]}
       {"type": "limit_reached"}
       {"type": "provider_failed", "provider": str, "error": str}
       {"type": "done", "result": ResearchResult}
@@ -131,7 +141,6 @@ def run_research(topic: str):
         except Exception as e:
             yield {"type": "provider_failed", "provider": name, "error": str(e)}
             last_error = e
-            continue
 
     yield {"type": "error", "message": f"All providers failed. Last error: {last_error}"}
 
@@ -225,7 +234,7 @@ def _run_with_groq(topic: str, toolset: Toolset):
     if not settings.groq_api_key:
         raise RuntimeError("GROQ_API_KEY is not set")
 
-    client = OpenAI(api_key=settings.groq_api_key, base_url="https://api.groq.com/openai/v1")
+    client = OpenAI(api_key=settings.groq_api_key, base_url=GROQ_BASE_URL)
     sources: list[dict] = []
     messages = [
         {"role": "system", "content": build_system_prompt()},
@@ -249,7 +258,7 @@ def _run_with_groq(topic: str, toolset: Toolset):
             "tool_calls": [tc.model_dump() for tc in choice.tool_calls],
         })
 
-        turn = [(tc.function.name, _tool_args(json.loads(tc.function.arguments or "{}"), topic)) for tc in choice.tool_calls]
+        turn = [(tc.function.name, _tool_args(tc.function.arguments, topic)) for tc in choice.tool_calls]
         results = yield from _run_tool_calls(toolset, turn, sources)
         messages.extend(
             {"role": "tool", "tool_call_id": tc.id, "content": text[:GROQ_RESULT_CHARS]}

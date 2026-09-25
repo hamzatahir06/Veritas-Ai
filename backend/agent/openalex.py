@@ -19,7 +19,7 @@ import requests
 
 from agent.tools import (
     RECENCY_DAYS, Recency, LOG_SNIPPET_LIMIT, CONTENT_LIMIT, MIN_RESULTS_BEFORE_WIDENING,
-    REF_PLACEHOLDER, drop_stale_years,
+    REF_PLACEHOLDER, drop_stale_years, top_up,
 )
 
 OPENALEX_URL = "https://api.openalex.org/works"
@@ -76,10 +76,9 @@ def _abstract_from_inverted_index(inv: dict | None) -> str:
 
 
 def _authors(work: dict) -> str:
+    """Up to three author names, "et al." beyond that; "" when none are listed."""
     names = [a.get("author", {}).get("display_name", "") for a in work.get("authorships", [])]
     names = [n for n in names if n]
-    if not names:
-        return "Unknown authors"
     if len(names) <= 3:
         return ", ".join(names)
     return f"{', '.join(names[:3])} et al."
@@ -124,13 +123,7 @@ def make_scholarly_search(topic: str = ""):
 
         widened = False
         if recency and len(works) < MIN_RESULTS_BEFORE_WIDENING:
-            seen = {w.get("id") for w in works}
-            try:
-                extra = [w for w in _fetch(query, None) if w.get("id") not in seen]
-            except Exception:
-                extra = []
-            works += extra[:MAX_RESULTS - len(works)]
-            widened = bool(extra)
+            works, widened = top_up(works, lambda: _fetch(query, None), "id", MAX_RESULTS)
 
         if not works:
             return "No peer-reviewed results found for this query.", []
@@ -141,26 +134,24 @@ def make_scholarly_search(topic: str = ""):
             published = w.get("publication_date") or w.get("publication_year") or "n.d."
             url = _best_url(w)
             abstract = _abstract_from_inverted_index(w.get("abstract_inverted_index"))
+            authors, venue = _authors(w), _venue(w)
 
-            authors = _authors(w)
             rows.append({
                 "query": query,
                 "title": title,
                 "url": url,
-                "snippet": (abstract or f"{_venue(w)} ({published}).")[:LOG_SNIPPET_LIMIT],
-                # Reference metadata the document writers turn into IEEE
-                # entries. The model-facing text keeps "Unknown authors" as a
-                # readable placeholder; a reference list must not print it.
-                "authors": "" if authors == "Unknown authors" else authors,
-                "venue": _venue(w),
+                "snippet": (abstract or f"{venue} ({published}).")[:LOG_SNIPPET_LIMIT],
+                # Reference metadata the document writers turn into IEEE entries.
+                "authors": authors,
+                "venue": venue,
                 "published": str(published),
                 "kind": "scholarly",
             })
             blocks.append(
                 f"Source {REF_PLACEHOLDER}\n"
                 f"Title: {title}\n"
-                f"Authors: {_authors(w)}\n"
-                f"Source: {_venue(w)}, published {published} · {w.get('cited_by_count', 0)} citations\n"
+                f"Authors: {authors or 'Unknown authors'}\n"
+                f"Source: {venue}, published {published} · {w.get('cited_by_count', 0)} citations\n"
                 f"URL: {url}\n"
                 f"Abstract: {abstract[:CONTENT_LIMIT]}"
             )

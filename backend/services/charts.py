@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFont
 
 from services import document_theme as T
-from services.document_common import Block, clean
+from services.document_common import Block, plain_text
 
 MIN_ROWS, MAX_ROWS = 3, 12
 
@@ -30,7 +30,6 @@ MIN_ROWS, MAX_ROWS = 3, 12
 # the whole table — an approximate or ranged value can't be drawn honestly.
 _VALUE = re.compile(r"([€£$¥]?)\s*\+?(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?\s*([%€£$¥]?)")
 _TABLE_PREFIX = re.compile(r"^Table\s+\d+\s*[:.]\s*", re.IGNORECASE)
-_MARKUP = re.compile(r"\*\*|__|`")
 
 
 @dataclass
@@ -40,10 +39,6 @@ class Chart:
     texts: list[str]     # each value exactly as the table printed it
     measure: str         # the numeric column's heading, e.g. "Adoption (%)"
     caption: str         # figure caption, without the "Figure n:" prefix
-
-
-def _cell(text: str) -> str:
-    return _MARKUP.sub("", clean(text)).strip()
 
 
 def _parse(text: str) -> tuple[float, str] | None:
@@ -61,15 +56,13 @@ def chart_from_table(block: Block) -> Chart | None:
     """A Chart when the table is exactly one labelled measure, else None."""
     if len(block.header) != 2 or not MIN_ROWS <= len(block.rows) <= MAX_ROWS:
         return None
-    label_header, measure = (_cell(h) for h in block.header)
+    label_header, measure = (plain_text(h).strip() for h in block.header)
     if "year" in measure.lower():
         return None
 
     labels, values, texts, units = [], [], [], set()
     for row in block.rows:
-        if len(row) != 2:
-            return None
-        label, text = _cell(row[0]), _cell(row[1])
+        label, text = (plain_text(cell).strip() for cell in row)
         parsed = _parse(text)
         if not label or parsed is None or _parse(label) is not None:
             return None  # a numeric label column means this isn't "items vs. one measure"
@@ -85,7 +78,7 @@ def chart_from_table(block: Block) -> Chart | None:
     if not units.pop() and all(v.is_integer() and 1900 <= v <= 2100 for v in values):
         return None
 
-    caption = _TABLE_PREFIX.sub("", _cell(block.caption)) if block.caption else ""
+    caption = _TABLE_PREFIX.sub("", plain_text(block.caption).strip())
     return Chart(labels, values, texts, measure,
                  caption or f"{measure} by {label_header.lower()}")
 

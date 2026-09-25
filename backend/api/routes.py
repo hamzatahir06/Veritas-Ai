@@ -1,25 +1,21 @@
-# uvicorn main:app --reload --port 8000
 import io
 import json
-import tempfile
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response, StreamingResponse, RedirectResponse
+from fastapi.responses import RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, EmailStr, Field
 
+from agent.core import ResearchResult, run_research
 from core.auth import get_current_user, get_optional_user, get_supabase
-from agent.core import run_research, ResearchResult
-
-# Consolidated and updated imports
-from services.storage import (
-    save_project, list_projects, get_project, delete_project,
-    add_to_waitlist, list_sources,
-    upload_document, get_document_url, save_document_paths
-)
-from services.docx_writer import build_docx, save_research_as_docx
-from services.pdf_writer import build_pdf, save_research_as_pdf
 from services.brief_review import review as review_brief
-from services.document_common import parse_markdown, document_filename
+from services.document_common import document_filename, parse_markdown
+from services.docx_writer import build_docx
+from services.pdf_writer import build_pdf
+from services.storage import (
+    add_to_waitlist, delete_project, get_document_url, get_project, list_projects,
+    list_sources, save_document_paths, save_project, upload_document,
+)
 
 router = APIRouter()
 
@@ -64,6 +60,25 @@ def read_current_user(user=Depends(get_current_user)):
 
 def _sse_event(data: dict) -> str:
     return f"data: {json.dumps(data)}\n\n"
+
+
+def _render(result: ResearchResult, fmt: str) -> bytes:
+    """One brief as .pdf / .docx bytes, rendered in memory."""
+    if fmt == "pdf":
+        return bytes(build_pdf(result).output())
+    buffer = io.BytesIO()
+    build_docx(result).save(buffer)
+    return buffer.getvalue()
+
+
+def _store_documents(supabase, user_id: str, project_id: str, result: ResearchResult) -> dict[str, str]:
+    """Renders both formats, uploads them, and records their paths. Returns {fmt: storage path}."""
+    paths = {
+        fmt: upload_document(supabase, user_id, project_id, _render(result, fmt), fmt, mime)
+        for fmt, mime in DOCUMENT_MIME.items()
+    }
+    save_document_paths(supabase, project_id, paths["docx"], paths["pdf"])
+    return paths
 
 
 @router.post("/waitlist")
@@ -117,17 +132,7 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                 if user:
                     try:
                         project_id = save_project(supabase, user.id, result)
-                        
-                        # Generate & Upload Documents Automatically
-                        with tempfile.TemporaryDirectory() as tmp:
-                            docx_local = save_research_as_docx(result, output_dir=tmp)
-                            pdf_local = save_research_as_pdf(result, output_dir=tmp)
-                            
-                            docx_path = upload_document(supabase, user.id, project_id, docx_local)
-                            pdf_path = upload_document(supabase, user.id, project_id, pdf_local)
-                            
-                            save_document_paths(supabase, project_id, docx_path, pdf_path)
-                            
+                        _store_documents(supabase, user.id, project_id, result)
                     except Exception as e:
                         # Non-fatal: the brief still streams to the client below.
                         # Distinct from "error" (a fatal run failure) so the UI
@@ -178,25 +183,15 @@ def download_document(
 
     path = project.get(f"{format}_path")
 
-    # On-Demand Generation for legacy projects (Option A)
+    # Projects saved before documents were generated get them on first download.
     if not path:
         result = ResearchResult(
             topic=project["topic"],
             markdown=project["markdown"],
             sources=project.get("sources", []),
-            provider="Retrieved from Archives"
+            provider="Retrieved from Archives",
         )
-        
-        with tempfile.TemporaryDirectory() as tmp:
-            docx_local = save_research_as_docx(result, output_dir=tmp)
-            pdf_local = save_research_as_pdf(result, output_dir=tmp)
-            
-            docx_path = upload_document(supabase, user.id, project_id, docx_local)
-            pdf_path = upload_document(supabase, user.id, project_id, pdf_local)
-            
-            save_document_paths(supabase, project_id, docx_path, pdf_path)
-            
-            path = docx_path if format == "docx" else pdf_path
+        path = _store_documents(supabase, user.id, project_id, result)[format]
 
     # Storage keys are UUIDs, so serve the document under its real name. The
     # date comes from when the brief was created, not when it was downloaded.
@@ -223,16 +218,9 @@ def render_document(format: str, payload: DocumentRequest):
         raise HTTPException(status_code=400, detail="Format must be 'docx' or 'pdf'")
 
     result = ResearchResult(payload.topic, payload.markdown, payload.sources, payload.provider)
-    if format == "pdf":
-        content = bytes(build_pdf(result).output())
-    else:
-        buffer = io.BytesIO()
-        build_docx(result).save(buffer)
-        content = buffer.getvalue()
-
     filename = document_filename(payload.topic, format)
     return Response(
-        content,
+        _render(result, format),
         media_type=DOCUMENT_MIME[format],
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

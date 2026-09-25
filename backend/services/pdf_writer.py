@@ -23,7 +23,6 @@ Notable choices, all of them load-bearing:
 """
 
 import io
-import os
 from datetime import date
 
 from fpdf import FPDF
@@ -35,8 +34,8 @@ from agent.core import ResearchResult
 from services import document_theme as T
 from services.charts import Chart, chart_from_table, render_png
 from services.document_common import (
-    Block, Run, SectionNumberer, build_references, clean, document_filename,
-    ends_list, normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
+    Block, Run, SectionNumberer, build_references, clean, ends_list, normalise_headings,
+    numeric_columns, parse_inline, parse_markdown, plain_text, strip_citations,
 )
 
 PT_TO_MM = 25.4 / 72
@@ -203,8 +202,8 @@ def _table(pdf: BriefPDF, block: Block):
         aligns.append("RIGHT" if is_numeric else "LEFT")
         # Relative weights, so a label column isn't squeezed to the same width
         # as a two-digit year. Clamped so one long cell can't starve the rest.
-        cells = [block.header[col]] + [r[col] for r in block.rows if col < len(r)]
-        widths.append(max(6, min(40, max(len(clean(c)) for c in cells))))
+        cells = [block.header[col]] + [row[col] for row in block.rows]
+        widths.append(max(6, min(40, max(len(plain_text(c)) for c in cells))))
 
     pdf.set_font(T.BODY_FAMILY, size=T.SIZE_TABLE)
     pdf.set_draw_color(*T.RULE)
@@ -218,13 +217,10 @@ def _table(pdf: BriefPDF, block: Block):
         padding=1.6,
         repeat_headings=1,
     ) as table:
-        row = table.row()
-        for cell in block.header:
-            row.cell(clean(cell))
-        for data in block.rows:
+        for cells in [block.header, *block.rows]:
             row = table.row()
-            for cell in data:
-                row.cell(clean(cell))
+            for cell in cells:
+                row.cell(plain_text(cell))
     pdf.ln(T.PARA_SPACE)
 
 
@@ -332,10 +328,3 @@ def build_pdf(result: ResearchResult, today: date | None = None) -> BriefPDF:
     if probe.pages_count <= T.TOC_PAGE_THRESHOLD:
         return probe
     return _render(result, with_toc=True, today=today)
-
-
-def save_research_as_pdf(result: ResearchResult, output_dir: str = "output") -> str:
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, document_filename(result.topic, "pdf"))
-    build_pdf(result).output(path)
-    return path

@@ -7,9 +7,8 @@ Two layers:
   * parse_inline()   -> [Run]    — character runs inside a block's text
 
 Renderers walk Blocks and ask parse_inline() for the runs of any text they
-draw. Keeping inline parsing separate is what lets the PDF render a citation
-marker differently from bold text without the parser knowing either format
-exists.
+draw. Documents carry no in-text citations (strip_citations() runs first);
+citation runs exist for services/brief_review.py, which checks them.
 
 The '## Sources' / '## References' section the model emits is skipped
 entirely: the real reference list is always rebuilt from actual search
@@ -19,7 +18,8 @@ results by build_references(), never trusted to the model.
 import re
 from dataclasses import dataclass, field
 from datetime import date
-from urllib.parse import urlparse
+
+from agent.tools import domain_of
 
 _CITATION_ARTIFACT_PATTERN = re.compile(r"【[^】]*】")
 
@@ -35,6 +35,9 @@ _ORDERED_ITEM = re.compile(r"^(\d+)[.)]\s+(.*)$")
 _CAPTION = re.compile(r"^(Table|Figure)\s+\d+\s*[:.]", re.IGNORECASE)
 _RULE = re.compile(r"^(-{3,}|\*{3,}|_{3,})$")
 
+# One IEEE marker: "[3]" or "[1, 4]".
+_CITE = r"\[\d+(?:\s*,\s*\d+)*\]"
+
 # Inline markers, matched in one pass. Order matters: code spans win over
 # everything, links are consumed before bare citation brackets so that
 # "[text](url)" is never mistaken for a citation, and bold is tried before
@@ -44,23 +47,21 @@ _INLINE = re.compile(
     r"|(?P<link>\[[^\]\n]+\]\([^)\s]+\))"
     r"|(?P<bold>\*\*[^\n]+?\*\*)"
     r"|(?P<italic>(?<!\*)\*(?!\s)[^*\n]+?(?<!\s)\*(?!\*))"
-    r"|(?P<cite>\[\d+(?:\s*,\s*\d+)*\])"
+    rf"|(?P<cite>{_CITE})"
 )
 
 
 # A run of IEEE markers plus the space before it: " [16], [17]" / " [1, 4]".
 # Never a markdown link "[1](url)".
-_CITATION_GROUP = re.compile(
-    r"\s*\[\d+(?:\s*,\s*\d+)*\](?:\s*,?\s*\[\d+(?:\s*,\s*\d+)*\])*(?!\()"
-)
+_CITATION_GROUP = re.compile(rf"\s*{_CITE}(?:\s*,?\s*{_CITE})*(?!\()")
 
 
 def strip_citations(markdown: str) -> str:
     """
     Removes in-text citation markers; the documents print no [n] in the body.
 
-    Done on the raw text, before parse_inline(), because that glues trailing
-    punctuation onto the citation run — dropping runs would lose the full stop.
+    Done on the raw text, before parsing, so a whole group goes with the space
+    before it and the sentence keeps its own punctuation: "rose [2]." -> "rose.".
     """
     return _CITATION_GROUP.sub("", markdown)
 
@@ -100,29 +101,6 @@ class Run:
     citation: bool = False  # an IEEE marker like "[3]" or "[1], [4]"
 
 
-_CLOSING_PUNCTUATION = ".,;:!?)]}"
-
-
-def _glue_closing_punctuation(runs: list[Run]) -> list[Run]:
-    """
-    Moves punctuation that follows a citation onto the citation's own run.
-
-    Renderers draw one run at a time and may wrap between them, which strands
-    the full stop after a marker at the start of the next line ("[2]" then
-    "."). Merging the pair into one run makes it unbreakable.
-    """
-    for i in range(len(runs) - 1):
-        following = runs[i + 1]
-        if not runs[i].citation or following.citation or following.link:
-            continue
-        remainder = following.text.lstrip(_CLOSING_PUNCTUATION)
-        moved = following.text[: len(following.text) - len(remainder)]
-        if moved:
-            runs[i].text += moved
-            following.text = remainder
-    return [r for r in runs if r.text]
-
-
 def parse_inline(text: str) -> list[Run]:
     """Splits a block's text into styled runs. Always returns at least one run."""
     text = clean(text)
@@ -149,7 +127,12 @@ def parse_inline(text: str) -> list[Run]:
 
     if pos < len(text):
         runs.append(Run(text[pos:]))
-    return _glue_closing_punctuation(runs) if runs else [Run(text)]
+    return runs or [Run(text)]
+
+
+def plain_text(text: str) -> str:
+    """A block's text without its markup — bold/italic/code markers dropped, links as their label."""
+    return "".join(run.text for run in parse_inline(text))
 
 
 def citation_numbers(text: str) -> list[int]:
@@ -182,13 +165,12 @@ def _is_table_row(line: str) -> bool:
     return line.startswith("|") and line.endswith("|")
 
 
-def _is_table_separator(line: str) -> bool:
-    cells = [c.strip() for c in line.strip().strip("|").split("|")]
-    return bool(cells) and all(re.fullmatch(r":?-+:?", c) for c in cells if c)
-
-
 def _parse_table_row(line: str) -> list[str]:
     return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _is_table_separator(line: str) -> bool:
+    return all(re.fullmatch(r":?-+:?", c) for c in _parse_table_row(line) if c)
 
 
 def _heading(line: str, hashes: int) -> Block | None:
@@ -258,7 +240,10 @@ def parse_markdown(markdown: str) -> list[Block]:
             i += 2
             rows = []
             while i < n and _is_table_row(lines[i].strip()):
-                rows.append(_parse_table_row(lines[i].strip()))
+                # Models write ragged rows; every renderer needs one cell per
+                # column, so pad short rows and drop cells past the header.
+                cells = _parse_table_row(lines[i].strip())[:len(header)]
+                rows.append(cells + [""] * (len(header) - len(cells)))
                 i += 1
             # Spec puts a table's caption above it, so a caption paragraph
             # immediately before the table belongs to it.
@@ -357,7 +342,7 @@ def numeric_columns(header: list[str], rows: list[list[str]]) -> list[bool]:
     Which table columns hold numbers, so a renderer can right-align them.
 
     Judged from the body rows only — a numeric column's heading is usually a
-    word ("Cost/kWh"). A currency symbol may lead ($310) or trail (310 EUR).
+    word ("Cost/kWh"). A currency symbol may lead ($310) or trail (310€).
     """
     flags = []
     for col in range(len(header)):
@@ -375,14 +360,6 @@ class Reference:
     index: int
     text: str   # everything except the URL, already IEEE-shaped
     url: str
-
-
-def _domain_of(url: str) -> str:
-    """Publishing domain — stands in as the title for a result that has none."""
-    try:
-        return urlparse(url).netloc.lower().removeprefix("www.") or url
-    except Exception:
-        return url
 
 
 def _year_of(source: dict) -> str:
@@ -408,7 +385,8 @@ def build_references(sources: list[dict]) -> list[Reference]:
             continue
         seen.add(url)
 
-        title = clean(source.get("title") or "") or _domain_of(url)
+        # The publishing domain stands in as the title for a result that has none.
+        title = clean(source.get("title") or "") or domain_of(url) or url
         authors = clean(source.get("authors") or "")
         venue = clean(source.get("venue") or "")
         year = _year_of(source)

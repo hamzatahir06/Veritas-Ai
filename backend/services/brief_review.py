@@ -14,7 +14,7 @@ formatting opinion from ever being able to kill a research run.
 import re
 from dataclasses import dataclass, field
 
-from services.document_common import Block, citation_numbers, parse_inline
+from services.document_common import Block, citation_numbers, plain_text, strip_citations
 
 # Section 8 of the house spec — the phrasing that gets a brief rejected on
 # sight by a senior reader.
@@ -53,10 +53,6 @@ class Finding:
 @dataclass
 class Review:
     findings: list[Finding] = field(default_factory=list)
-
-    @property
-    def ok(self) -> bool:
-        return not any(f.severity == "error" for f in self.findings)
 
     def as_dicts(self) -> list[dict]:
         return [{"code": f.code, "message": f.message, "severity": f.severity} for f in self.findings]
@@ -101,17 +97,16 @@ def _match_section(sections: dict[str, list[Block]], needle: str) -> list[Block]
     return None
 
 
-def _plain_text(blocks: list[Block]) -> str:
-    out = []
-    for block in blocks:
-        if block.type in ("paragraph", "bullet", "quote", "caption"):
-            out.append("".join(r.text for r in parse_inline(block.text) if not r.citation))
-    return " ".join(out)
+def _prose(blocks: list[Block]) -> str:
+    """The readable text of a section, citations and markup removed — what a word count should see."""
+    return " ".join(
+        plain_text(strip_citations(block.text))
+        for block in blocks if block.type in ("paragraph", "bullet", "quote", "caption")
+    )
 
 
 def review(markdown: str, blocks: list[Block], sources: list[dict]) -> Review:
     """Checks a parsed draft against the house spec. Never raises."""
-    findings: list[Finding] = []
     try:
         findings = _run_checks(markdown, blocks, sources)
     except Exception as e:  # a broken check must never break document generation
@@ -143,7 +138,7 @@ def _run_checks(markdown: str, blocks: list[Block], sources: list[dict]) -> list
     # --- executive summary -------------------------------------------------
     summary = _match_section(sections, "executive summary")
     if summary is not None:
-        words = len(_plain_text(summary).split())
+        words = len(_prose(summary).split())
         if words > EXEC_SUMMARY_MAX_WORDS:
             findings.append(Finding(
                 "summary_too_long",
@@ -184,9 +179,8 @@ def _run_checks(markdown: str, blocks: list[Block], sources: list[dict]) -> list
         ))
     if available and not cited:
         findings.append(Finding("no_citations", "Brief cites no sources at all.", "error"))
-
-    unused = available - len(cited & set(range(1, available + 1)))
-    if available and unused == available:
+    elif available and not cited & set(range(1, available + 1)):
+        # Citations exist, but every one of them dangles.
         findings.append(Finding("sources_unused", "No gathered source is cited in the text."))
 
     # --- tables referenced before they appear ------------------------------

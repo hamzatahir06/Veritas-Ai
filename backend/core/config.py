@@ -6,6 +6,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # directory (uvicorn from repo root, a worker script, Docker, a service unit).
 _ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
+# Groq serves an OpenAI-compatible API; both the classifier and the research
+# fallback talk to it through the openai SDK.
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
 
 class Settings(BaseSettings):
     # extra="ignore": a stray key in .env must not crash startup.

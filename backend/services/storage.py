@@ -7,8 +7,8 @@ without ever touching a database.
 """
 
 from supabase import Client
+
 from agent.core import ResearchResult
-from pathlib import Path
 
 
 def save_project(supabase: Client, user_id: str, result: ResearchResult) -> str:
@@ -139,17 +139,16 @@ def list_sources(supabase: Client, user_id: str) -> list[dict]:
     return res.data
 
 
-def upload_document(supabase: Client, user_id: str, project_id: str, file_path: str) -> str:
-    """Uploads a local file to Supabase Storage and returns the storage path."""
-    suffix = Path(file_path).suffix  # .docx or .pdf
-    storage_path = f"{user_id}/{project_id}{suffix}"
-    
-    with open(file_path, "rb") as f:
-        supabase.storage.from_("documents").upload(
-            path=storage_path,
-            file=f.read(),
-            file_options={"content-type": "application/octet-stream", "upsert": "true"},
-        )
+def upload_document(
+    supabase: Client, user_id: str, project_id: str, content: bytes, fmt: str, content_type: str,
+) -> str:
+    """Uploads a rendered document to Supabase Storage and returns its storage path."""
+    storage_path = f"{user_id}/{project_id}.{fmt}"
+    supabase.storage.from_("documents").upload(
+        path=storage_path,
+        file=content,
+        file_options={"content-type": content_type, "upsert": "true"},
+    )
     return storage_path
 
 

@@ -118,7 +118,8 @@ def drop_stale_years(query: str, topic: str) -> str:
     return " ".join(cleaned.split()) or query
 
 
-def _domain_of(url: str) -> str:
+def domain_of(url: str) -> str:
+    """Host of a URL without "www.", or "" when it can't be parsed."""
     try:
         return urlparse(url).netloc.lower().removeprefix("www.")
     except Exception:
@@ -141,7 +142,7 @@ def _is_gov_or_edu(domain: str) -> bool:
 
 def _authority_weight(url: str, topic_keywords: set[str]) -> float:
     """Higher = more trusted. Applied as a multiplier on Tavily's relevance score."""
-    domain = _domain_of(url)
+    domain = domain_of(url)
     if not domain:
         return 1.0
 
@@ -161,6 +162,20 @@ def _authority_weight(url: str, topic_keywords: set[str]) -> float:
     return 1.0
 
 
+def top_up(results: list[dict], fetch_unfiltered, key: str, limit: int) -> tuple[list[dict], bool]:
+    """
+    Pads a thin filtered result list with unfiltered results it doesn't already
+    hold, so a recency/category filter can never starve a run of sources.
+    Returns (results, widened). A failed unfiltered fetch just adds nothing.
+    """
+    seen = {r.get(key) for r in results}
+    try:
+        extra = [r for r in fetch_unfiltered() if r.get(key) not in seen]
+    except Exception:
+        extra = []
+    return results + extra[:limit - len(results)], bool(extra)
+
+
 def make_web_search(tavily_client: TavilyClient, topic: str = ""):
     topic_keywords = _topic_keywords(topic)
 
@@ -172,7 +187,7 @@ def make_web_search(tavily_client: TavilyClient, topic: str = ""):
         candidates = [
             r for r in response.get("results", [])
             if r.get("score", 0) >= MIN_RELEVANCE_SCORE
-            and not any(bad in _domain_of(r.get("url", "")) for bad in HARD_EXCLUDE_DOMAINS)
+            and not any(bad in domain_of(r.get("url", "")) for bad in HARD_EXCLUDE_DOMAINS)
         ]
         return sorted(
             candidates,
@@ -196,13 +211,7 @@ def make_web_search(tavily_client: TavilyClient, topic: str = ""):
 
         widened = False
         if (recency or category != "general") and len(ranked) < MIN_RESULTS_BEFORE_WIDENING:
-            seen = {r.get("url") for r in ranked}
-            try:
-                extra = [r for r in _ranked(query, None, "general") if r.get("url") not in seen]
-            except Exception:
-                extra = []
-            ranked += extra[:MAX_RESULTS - len(ranked)]
-            widened = bool(extra)
+            ranked, widened = top_up(ranked, lambda: _ranked(query, None, "general"), "url", MAX_RESULTS)
 
         if not ranked:
             return "No relevant results found for this query.", []
@@ -216,7 +225,7 @@ def make_web_search(tavily_client: TavilyClient, topic: str = ""):
                 # Reference metadata for the document writers. A web page has
                 # no byline to speak of, so the publishing domain stands in as
                 # the venue — enough for a usable IEEE entry.
-                "venue": _domain_of(r.get("url", "")),
+                "venue": domain_of(r.get("url", "")),
                 "published": r.get("published_date") or "",
                 "kind": "web",
             }

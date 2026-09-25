@@ -27,7 +27,6 @@ Word-specific choices, each deliberate:
 """
 
 import io
-import os
 from datetime import date
 
 from docx import Document
@@ -40,8 +39,8 @@ from agent.core import ResearchResult
 from services import document_theme as T
 from services.charts import Chart, chart_from_table, render_png
 from services.document_common import (
-    Block, SectionNumberer, build_references, clean, document_filename,
-    ends_list, normalise_headings, numeric_columns, parse_inline, parse_markdown, strip_citations,
+    Block, SectionNumberer, build_references, clean, ends_list, normalise_headings,
+    numeric_columns, parse_inline, parse_markdown, plain_text, strip_citations,
 )
 
 H1, H2, H3 = "Veritas Heading 1", "Veritas Heading 2", "Veritas Heading 3"
@@ -337,7 +336,7 @@ def _add_table(doc, block: Block):
 
     for cell, text, is_numeric in zip(table.rows[0].cells, block.header, numeric):
         paragraph = cell.paragraphs[0]
-        paragraph.add_run(clean(text)).bold = True
+        paragraph.add_run(plain_text(text)).bold = True
         if is_numeric:
             paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         _resize(paragraph, T.SIZE_TABLE)
@@ -379,10 +378,6 @@ def _add_references(doc, result: ResearchResult, numberer: SectionNumberer):
         _add_hyperlink(paragraph, reference.url, reference.url)
 
 
-# --------------------------------------------------------------------------
-# entry points
-# --------------------------------------------------------------------------
-
 def _add_figure(doc, chart: Chart, number: int):
     """A chart under its table, captioned below — the PDF's layout."""
     section = doc.sections[0]
@@ -391,6 +386,10 @@ def _add_figure(doc, chart: Chart, number: int):
     doc.paragraphs[-1].paragraph_format.keep_with_next = True
     doc.add_paragraph(f"Figure {number}: {chart.caption}", style=CAPTION_STYLE)
 
+
+# --------------------------------------------------------------------------
+# entry point
+# --------------------------------------------------------------------------
 
 def build_docx(result: ResearchResult, today: date | None = None):
     today = today or date.today()
@@ -436,10 +435,3 @@ def build_docx(result: ResearchResult, today: date | None = None):
 
     _add_references(doc, result, numberer)
     return doc
-
-
-def save_research_as_docx(result: ResearchResult, output_dir: str = "output") -> str:
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, document_filename(result.topic, "docx"))
-    build_docx(result).save(path)
-    return path

@@ -8,11 +8,13 @@ either confirms the message is genuine research (proceed to run_research),
 or returns a short conversational reply directly, skipping the loop.
 """
 
+import re
+
 from google import genai
 from google.genai import types as gtypes
 from openai import OpenAI
 
-from core.config import get_settings
+from core.config import GROQ_BASE_URL, get_settings
 
 CLASSIFY_PROMPT = """You are Veritas AI, an advanced research assistant created to assist users with research so they can save precious time.
 
@@ -30,11 +32,14 @@ Look at the user's message below and respond in exactly one of two ways:
 User message: {topic}"""
 
 
-def _clean_response(text: str) -> str:
-    """Helper to clean common LLM markdown artifacts (e.g. '**RESEARCH**' or '"RESEARCH"')"""
-    if not text:
-        return ""
-    return text.strip().strip('"').strip("'").replace("*", "").strip()
+# The research verdict, tolerating the wrapping models add: '**RESEARCH**',
+# '"RESEARCH"', 'Research.'
+_RESEARCH_VERDICT = re.compile(r"\W*research\W*", re.IGNORECASE)
+
+
+def _clean_response(text: str | None) -> str:
+    """A model reply without surrounding quotes and markdown emphasis."""
+    return (text or "").strip().strip('"').strip("'").replace("*", "").strip()
 
 
 def classify(topic: str) -> tuple[bool, str]:
@@ -50,10 +55,7 @@ def classify(topic: str) -> tuple[bool, str]:
     # --- Step 1: Try Groq First (Ultra-fast & Lightweight) ---
     if settings.groq_api_key:
         try:
-            groq_client = OpenAI(
-                api_key=settings.groq_api_key,
-                base_url="https://api.groq.com/openai/v1",
-            )
+            groq_client = OpenAI(api_key=settings.groq_api_key, base_url=GROQ_BASE_URL)
             # gpt-oss reasons before answering; low effort + headroom keeps the
             # reasoning from eating the whole token budget and leaving no reply.
             response = groq_client.chat.completions.create(
@@ -84,11 +86,7 @@ def classify(topic: str) -> tuple[bool, str]:
             text = ""
 
     # --- Step 3: Safety Guardrail ---
-    # If both classifiers fail, default to True so we never drop a real research request
-    if not text:
+    # If both classifiers fail, default to research so a real request is never dropped.
+    if not text or _RESEARCH_VERDICT.fullmatch(text):
         return True, ""
-
-    if text.upper() == "RESEARCH":
-        return True, ""
-
     return False, text

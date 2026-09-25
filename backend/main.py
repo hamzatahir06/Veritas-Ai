@@ -1,7 +1,9 @@
+# uvicorn main:app --reload --port 8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import get_settings
+
 from api.routes import router
+from core.config import get_settings
 
 settings = get_settings()
 app = FastAPI(title="Research Brief Agent API")
@@ -16,8 +18,10 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],
 )
 
+
 @app.get("/")
 def root():
     return {"service": "Research Brief Agent API", "docs": "/docs"}
+
 
 app.include_router(router, prefix="/api")
