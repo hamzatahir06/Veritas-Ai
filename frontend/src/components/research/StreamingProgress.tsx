@@ -77,14 +77,14 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
   return (
     <div className="rounded-2xl border border-black/10 bg-white p-5">
       <div className="mb-3">
-        {stepsToggle || <span className="text-sm font-medium text-ink/60">Researching</span>}
+        {stepsToggle || <span className="text-sm font-medium text-ink">Researching</span>}
       </div>
 
       <ul className="flex flex-col gap-2">
         {underItsSearch(events).map(({ event, index: i, answered }) => {
           if (event.type === 'searching') {
             return (
-              <li key={i} className="flex items-center gap-2 text-sm text-ink/80">
+              <li key={i} className="flex items-center gap-2 text-sm text-ink">
                 {/* Pulses only while this search is still running. */}
                 <span
                   className={`h-1.5 w-1.5 rounded-full bg-brand ${done || answered ? '' : 'animate-pulse'}`}
@@ -101,7 +101,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
             // Nothing to reveal — keep the original plain line.
             if (sources.length === 0) {
               return (
-                <li key={i} className="pl-3.5 text-sm text-ink/50">
+                <li key={i} className="pl-3.5 text-sm text-ink">
                   {label}
                 </li>
               )
@@ -117,7 +117,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
                   type="button"
                   onClick={() => toggle(i)}
                   aria-expanded={isOpen}
-                  className="flex cursor-pointer items-center gap-1 text-sm text-ink/50 transition-colors hover:text-ink/80"
+                  className="flex cursor-pointer items-center gap-1 text-sm text-ink transition-colors hover:text-brand-dark"
                 >
                   <span className="text-[10px] leading-none">{isOpen ? '▾' : '▸'}</span>
                   <span className="underline decoration-dotted underline-offset-2">{label}</span>
@@ -133,7 +133,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
                         <span
                           key={j}
                           title={source.title || source.url}
-                          className={`${chipClass} text-ink/50`}
+                          className={`${chipClass} text-ink`}
                         >
                           {domainOf(source.url)}
                         </span>
@@ -144,7 +144,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
                           target="_blank"
                           rel="noreferrer"
                           title={source.title || source.url}
-                          className={`${chipClass} text-ink/70 transition-colors hover:border-brand/40 hover:bg-brand/10 hover:text-brand-dark`}
+                          className={`${chipClass} text-ink transition-colors hover:border-brand/40 hover:bg-brand/10 hover:text-brand-dark`}
                         >
                           {domainOf(source.url)}
                         </a>
