@@ -56,6 +56,16 @@ export async function joinWaitlist(
   return response.json()
 }
 
+/** Permanently deletes the signed-in account; `email` must match it (checked server-side too). */
+export async function deleteAccount(email: string, accessToken: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/me`, {
+    method: 'DELETE',
+    headers: jsonHeaders(accessToken),
+    body: JSON.stringify({ email }),
+  })
+  if (!response.ok) throw new Error('Could not delete your account — please try again.')
+}
+
 export async function* streamResearch(
   topic: string,
   accessToken?: string,

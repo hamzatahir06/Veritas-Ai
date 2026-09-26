@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
 import BrandLogo, { LogoMark } from './BrandLogo'
 import ContactMenu from './ContactMenu'
+import AccountMenu from './AccountMenu'
 
 const underline = (
   <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-brand shadow-sm" />
@@ -20,8 +21,6 @@ type TopBarProps = {
 }
 
 export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen, onToggleMenu }: TopBarProps) {
-  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : 'VA'
-
   // The "Sources" link is an in-page scroll target (/#sources), so the active
   // state is driven by the hash rather than by route matching.
   const location = useLocation()
@@ -92,13 +91,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
             >
               Upgrade
             </Link>
-            <button
-              onClick={onSignOut}
-              title={user?.email ? `Signed in as ${user.email}` : 'Sign out'}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand/20 text-sm font-semibold text-brand-dark hover:bg-brand/30"
-            >
-              {initials}
-            </button>
+            <AccountMenu user={user} onSignOut={onSignOut} />
           </>
         ) : (
           <>

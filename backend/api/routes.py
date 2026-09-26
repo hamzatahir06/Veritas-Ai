@@ -13,7 +13,7 @@ from services.document_common import document_filename, parse_markdown
 from services.docx_writer import build_docx
 from services.pdf_writer import build_pdf
 from services.storage import (
-    add_to_waitlist, delete_project, get_document_url, get_project, list_projects,
+    add_to_waitlist, delete_account, delete_project, get_document_url, get_project, list_projects,
     list_sources, save_document_paths, save_project, upload_document,
 )
 
@@ -51,6 +51,11 @@ DOCUMENT_MIME = {
 }
 
 
+class DeleteAccountRequest(BaseModel):
+    # The user types their account email to confirm; compared, never stored.
+    email: str = Field(max_length=320)
+
+
 class WaitlistRequest(BaseModel):
     # Optional: signed-in users are identified by their token, not a posted email.
     email: EmailStr | None = None
@@ -69,6 +74,15 @@ def get_sources(user=Depends(get_current_user), supabase=Depends(get_supabase)):
 @router.get("/me")
 def read_current_user(user=Depends(get_current_user)):
     return {"id": user.id, "email": user.email}
+
+
+@router.delete("/me", status_code=204)
+def delete_current_user(payload: DeleteAccountRequest, user=Depends(get_current_user), supabase=Depends(get_supabase)):
+    """Permanently deletes the signed-in account. The typed email must match the
+    account's, checked here too so the confirmation can't be skipped client-side."""
+    if payload.email.strip().lower() != (user.email or "").lower():
+        raise HTTPException(status_code=400, detail="Email does not match this account")
+    delete_account(supabase, user.id)
 
 
 def _sse_event(data: dict) -> str:

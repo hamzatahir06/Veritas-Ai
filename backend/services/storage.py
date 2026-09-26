@@ -103,18 +103,33 @@ def delete_project(supabase: Client, user_id: str, project_id: str) -> bool:
         return False
     project = owned.data[0]
 
-    # Storage cleanup is best-effort: a missing or unreachable object must
-    # not block removal of the DB rows.
-    paths = [p for p in (project.get("docx_path"), project.get("pdf_path")) if p]
+    _remove_documents(supabase, [project])
+
+    supabase.table("sources").delete().eq("project_id", project_id).execute()
+    supabase.table("projects").delete().eq("id", project_id).eq("user_id", user_id).execute()
+    return True
+
+
+def delete_account(supabase: Client, user_id: str) -> None:
+    """Deletes a user and everything they own. Projects, sources and the
+    waitlist link go with the auth row (`on delete cascade` / `set null`);
+    Storage objects aren't in Postgres, so they are removed first."""
+    projects = (
+        supabase.table("projects").select("docx_path, pdf_path").eq("user_id", user_id).execute()
+    )
+    _remove_documents(supabase, projects.data)
+    supabase.auth.admin.delete_user(user_id)
+
+
+def _remove_documents(supabase: Client, projects: list[dict]) -> None:
+    """Removes the projects' generated documents from Storage. Best-effort: a
+    missing or unreachable object must not block removal of the DB rows."""
+    paths = [p for row in projects for p in (row.get("docx_path"), row.get("pdf_path")) if p]
     if paths:
         try:
             supabase.storage.from_("documents").remove(paths)
         except Exception:
             pass
-
-    supabase.table("sources").delete().eq("project_id", project_id).execute()
-    supabase.table("projects").delete().eq("id", project_id).eq("user_id", user_id).execute()
-    return True
 
 
 def add_to_waitlist(supabase: Client, email: str, user_id: str | None = None) -> bool:

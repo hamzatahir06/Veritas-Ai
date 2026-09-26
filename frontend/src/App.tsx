@@ -6,6 +6,7 @@ import ProjectDetail from './pages/ProjectDetail'
 import Sources from './pages/Sources'
 import { useAuth } from './hooks/useAuth'
 import Pricing from './pages/Pricing'
+import Profile from './pages/Profile'
 
 export default function App() {
   const { isSignedIn, user, accessToken, loading, signInWithGoogle, signOut } = useAuth()
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/sources" element={<Sources />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>

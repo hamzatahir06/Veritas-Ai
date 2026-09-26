@@ -34,7 +34,7 @@ backend/
 frontend/src/
   lib/         api.ts (streamResearch + API_BASE), supabase.ts
   hooks/       useAuth.ts, useResearchThread.ts
-  pages/       Home, Projects, ProjectDetail, Sources, Pricing
+  pages/       Home, Projects, ProjectDetail, Sources, Pricing, Profile (plan + delete account)
   components/  shell/ (Layout, Sidebar, TopBar) · research/ (PromptBox, StreamingProgress, ResultView…) · landing/
 ```
 
