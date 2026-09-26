@@ -48,6 +48,8 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
   // Which "N sources found" rows are open, keyed by index in `events`. Rows
   // start closed so the trail stays one line per search until asked otherwise.
   const [openRows, setOpenRows] = useState<Set<number>>(new Set())
+  // A finished run folds its trail away behind a toggle; a live run always shows it.
+  const [showSteps, setShowSteps] = useState(false)
 
   const toggle = (index: number) => {
     setOpenRows((prev) => {
@@ -58,9 +60,25 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
     })
   }
 
+  const stepsToggle = done && (
+    <button
+      type="button"
+      onClick={() => setShowSteps(!showSteps)}
+      aria-expanded={showSteps}
+      className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-ink hover:text-brand-dark"
+    >
+      <span className="text-[10px] leading-none">{showSteps ? '▾' : '▸'}</span>
+      {showSteps ? 'Hide research steps' : 'Show research steps'}
+    </button>
+  )
+
+  if (done && !showSteps) return stepsToggle
+
   return (
     <div className="rounded-2xl border border-black/10 bg-white p-5">
-      <div className="mb-3 text-sm font-medium text-ink/60">{done ? 'Research steps' : 'Researching'}</div>
+      <div className="mb-3">
+        {stepsToggle || <span className="text-sm font-medium text-ink/60">Researching</span>}
+      </div>
 
       <ul className="flex flex-col gap-2">
         {underItsSearch(events).map(({ event, index: i, answered }) => {
