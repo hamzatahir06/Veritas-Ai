@@ -131,7 +131,7 @@ def _title_page(pdf: BriefPDF, result: ResearchResult, today: date):
     pdf.ln(55)
     pdf.rule(width=32, color=T.BRAND, thickness=1.2)
     pdf.ln(4)
-    pdf.text_block(clean(result.topic), style="B", size=T.SIZE_TITLE, height=10)
+    pdf.text_block(clean(result.title), style="B", size=T.SIZE_TITLE, height=10)
     pdf.ln(2)
     pdf.text_block(T.DOC_KIND, style="I", size=T.SIZE_SUBTITLE, color=T.MUTED)
     pdf.ln(3)
@@ -272,12 +272,12 @@ def _references(pdf: BriefPDF, result: ResearchResult, numberer: SectionNumberer
 
 def _render(result: ResearchResult, *, with_toc: bool, today: date) -> BriefPDF:
     pdf = BriefPDF()
-    topic = clean(result.topic)
-    pdf.set_title(f"{topic} — {T.DOC_KIND}")
+    title = clean(result.title)
+    pdf.set_title(f"{title} — {T.DOC_KIND}")
     pdf.set_author(T.AUTHOR)
     pdf.set_subject(T.DOC_KIND)
     pdf.set_creator(T.AUTHOR)
-    pdf.set_keywords(", ".join(filter(None, [topic, "research brief", result.provider])))
+    pdf.set_keywords(", ".join(filter(None, [title, "research brief", result.provider])))
 
     _title_page(pdf, result, today)
     pdf.add_page()

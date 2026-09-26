@@ -16,7 +16,7 @@ def save_project(supabase: Client, user_id: str, result: ResearchResult) -> str:
     project = supabase.table("projects").insert({
         "user_id": user_id,
         "topic": result.topic,
-        "title": result.topic,
+        "title": result.title,
         "status": "completed",
         "markdown": result.markdown,
     }).execute()

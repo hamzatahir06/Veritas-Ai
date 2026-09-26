@@ -92,7 +92,12 @@ Plain, precise, calm — write for a senior researcher who is short on time.
 When searching is done, output the brief as markdown in EXACTLY this shape. Use `##` for every
 section and `###` for subsections — never deeper, and never number the headings yourself.
 
-# <Topic Title>
+# <Brief Title>
+
+The title is what the document is published under, so write it like a report title, not a copy
+of the user's message: 4-12 words, Title Case, spelling, grammar and punctuation corrected, no
+question mark, no trailing full stop. E.g. "wat is impct of ai on helthcare jobs??" ->
+"# The Impact of Artificial Intelligence on Healthcare Employment".
 
 ## Executive Summary
 At most 250 words, and the answer must land in the first two sentences. No preamble.

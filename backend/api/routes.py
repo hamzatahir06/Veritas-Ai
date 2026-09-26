@@ -199,15 +199,15 @@ def download_document(
         raise HTTPException(status_code=404, detail="Project not found")
 
     path = project.get(f"{format}_path")
+    result = ResearchResult(
+        topic=project["topic"],
+        markdown=project["markdown"],
+        sources=project.get("sources", []),
+        provider="Retrieved from Archives",
+    )
 
     # Projects saved before documents were generated get them on first download.
     if not path:
-        result = ResearchResult(
-            topic=project["topic"],
-            markdown=project["markdown"],
-            sources=project.get("sources", []),
-            provider="Retrieved from Archives",
-        )
         path = _store_documents(supabase, user.id, project_id, result)[format]
 
     # Storage keys are UUIDs, so serve the document under its real name. The
@@ -216,7 +216,7 @@ def download_document(
         created = datetime.fromisoformat(str(project.get("created_at")).replace("Z", "+00:00")).date()
     except (TypeError, ValueError):
         created = None
-    filename = document_filename(project["topic"], format, today=created)
+    filename = document_filename(result.title, format, today=created)
 
     signed_url = get_document_url(supabase, path, download_as=filename)
     return RedirectResponse(url=signed_url)
@@ -236,7 +236,7 @@ def render_document(format: str, payload: DocumentRequest):
 
     sources = [s.model_dump() for s in payload.sources]
     result = ResearchResult(payload.topic, payload.markdown, sources, payload.provider)
-    filename = document_filename(payload.topic, format)
+    filename = document_filename(result.title, format)
     return Response(
         _render(result, format),
         media_type=DOCUMENT_MIME[format],

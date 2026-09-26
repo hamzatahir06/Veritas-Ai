@@ -46,6 +46,8 @@ STOP_SEARCHING = "Stop searching now and write the final research brief in markd
 # 【7】, and gpt-oss's line-anchored form 【7†L12-L20】.
 _LENTICULAR_CITE = re.compile(r"【\s*(\d+)[^】]*】")
 
+_H1 = re.compile(r"^# +(.+)$", re.MULTILINE)
+
 
 def _require_markdown(get_text, provider: str) -> str:
     """
@@ -100,6 +102,22 @@ class ResearchResult:
         for s in self.sources:
             unique.setdefault(s.get("url") or s.get("title", ""), s)
         self.sources = list(unique.values())
+
+    @property
+    def title(self) -> str:
+        """
+        The brief's own '# Title' line, falling back to the raw topic.
+
+        The model writes a clean, professional title (spelling fixed, question
+        rephrased), which is what documents and the project list should show
+        rather than the user's prompt as typed. Only a lone level-1 heading
+        counts — a model that writes every section as '#' has no title line —
+        matching services/document_common.normalise_headings().
+        """
+        h1s = _H1.findall(self.markdown)
+        if len(h1s) == 1 and self.markdown.lstrip().startswith("# "):
+            return h1s[0].strip() or self.topic
+        return self.topic
 
 
 def run_research(topic: str):
