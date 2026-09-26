@@ -75,7 +75,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
   if (done && !showSteps) return stepsToggle
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-5">
+    <div className="rounded-2xl border border-black/25 bg-white p-5">
       <div className="mb-3">
         {stepsToggle || <span className="text-sm font-medium text-ink">Researching</span>}
       </div>
@@ -109,7 +109,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
 
             const isOpen = openRows.has(i)
             // The chip look is shared; only a live run makes them real links.
-            const chipClass = 'rounded-md border border-black/10 bg-black/[0.03] px-2 py-1 text-xs'
+            const chipClass = 'rounded-md border border-black/25 bg-black/[0.03] px-2 py-1 text-xs'
 
             return (
               <li key={i} className="pl-3.5">
