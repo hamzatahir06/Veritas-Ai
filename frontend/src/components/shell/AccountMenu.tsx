@@ -25,9 +25,9 @@ export default function AccountMenu({ user, onSignOut }: { user: User | null; on
         <>
           {/* Click-away layer */}
           <div className="fixed inset-0 z-40" onClick={close} />
-          <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-black/10 bg-white p-1 shadow-lg">
+          <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-black/25 bg-white p-1 shadow-lg">
             {user?.email && (
-              <div className="truncate border-b border-black/5 px-3 py-2.5 text-xs text-ink/50">{user.email}</div>
+              <div className="truncate border-b border-black/25 px-3 py-2.5 text-xs text-ink">{user.email}</div>
             )}
             <Link to="/profile" onClick={close} className={`${itemClass} text-ink hover:bg-black/5`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" className="h-5 w-5">

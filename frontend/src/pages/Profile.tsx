@@ -4,7 +4,7 @@ import { deleteAccount } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { usePageContext } from '../hooks/usePageContext'
 
-const cardClass = 'rounded-2xl border border-black/10 bg-white p-6 shadow-xs'
+const cardClass = 'rounded-2xl border border-black/25 bg-white p-6 shadow-xs'
 
 export default function Profile() {
   const { isSignedIn, accessToken, user } = usePageContext()
@@ -44,12 +44,12 @@ export default function Profile() {
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10">
         <div>
           <h1 className="text-xl font-semibold text-ink">Profile</h1>
-          <p className="mt-1 truncate text-sm text-ink/50">{email}</p>
+          <p className="mt-1 truncate text-sm text-ink">{email}</p>
         </div>
 
         {/* Plan — everyone is on Free until Pro launches */}
         <section className={cardClass}>
-          <h2 className="text-xs font-semibold tracking-wide text-ink/50 uppercase">Current plan</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-ink uppercase">Current plan</h2>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
             <span className="text-lg font-bold text-ink">Free plan</span>
             <Link
@@ -63,8 +63,8 @@ export default function Profile() {
 
         {/* Delete account */}
         <section className={cardClass}>
-          <h2 className="text-xs font-semibold tracking-wide text-ink/50 uppercase">Delete account</h2>
-          <p className="mt-3 text-sm text-ink/70">
+          <h2 className="text-xs font-semibold tracking-wide text-ink uppercase">Delete account</h2>
+          <p className="mt-3 text-sm text-ink">
             Permanently deletes your account, research projects, sources and documents. This cannot be undone.
           </p>
           <button
@@ -87,7 +87,7 @@ export default function Profile() {
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
           >
             <h3 id="delete-title" className="text-lg font-semibold text-ink">Delete your account?</h3>
-            <p className="mt-2 text-sm text-ink/70">
+            <p className="mt-2 text-sm text-ink">
               Type <span className="font-semibold text-ink">{email}</span> to confirm.
             </p>
             <input
@@ -97,7 +97,7 @@ export default function Profile() {
               placeholder={email}
               autoFocus
               autoComplete="off"
-              className="mt-4 w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink outline-none focus:border-red-500"
+              className="mt-4 w-full rounded-lg border border-black/25 px-3 py-2 text-sm text-ink outline-none focus:border-red-500"
             />
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex justify-end gap-3">
