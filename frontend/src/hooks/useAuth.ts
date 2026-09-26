@@ -30,6 +30,9 @@ export function useAuth() {
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
+        // Always show Google's account chooser, so a user with several Google
+        // accounts can pick one instead of being signed in silently.
+        queryParams: { prompt: 'select_account' },
       },
     })
 
