@@ -17,6 +17,7 @@ export async function getJson<T>(path: string, accessToken: string, errorMessage
 }
 
 export type StreamEvent =
+  | { type: 'planning' }
   | { type: 'searching'; query: string }
   // `sources` is optional so an older backend (or a cached bundle) that omits
   // it degrades to the plain, unclickable count rather than breaking.

@@ -38,6 +38,17 @@ function underItsSearch(events: StreamEvent[]): Row[] {
   return rows
 }
 
+/**
+ * What a live run is doing while no search is in flight, so the box is never
+ * silent: before the backend has read the question, while the model picks
+ * its searches, and while it works through the results and writes.
+ */
+function waitingLabel(events: StreamEvent[]): string {
+  if (events.length === 0) return 'Reading your question…'
+  if (!events.some((e) => e.type === 'searching')) return 'Planning the research…'
+  return 'Analysing the sources…'
+}
+
 type StreamingProgressProps = {
   events: StreamEvent[]
   /** The run has finished: the trail stays expandable, but sources are text. */
@@ -74,6 +85,9 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
 
   if (done && !showSteps) return stepsToggle
 
+  const rows = underItsSearch(events)
+  const searchRunning = rows.some((r) => r.event.type === 'searching' && !r.answered)
+
   return (
     <div className="rounded-2xl border border-black/25 bg-white p-5">
       <div className="mb-3">
@@ -81,7 +95,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
       </div>
 
       <ul className="flex flex-col gap-2">
-        {underItsSearch(events).map(({ event, index: i, answered }) => {
+        {rows.map(({ event, index: i, answered }) => {
           if (event.type === 'searching') {
             return (
               <li key={i} className="flex items-center gap-2 text-sm text-ink">
@@ -166,6 +180,12 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
 
           return null
         })}
+        {!done && !searchRunning && (
+          <li className="flex items-center gap-2 text-sm text-ink">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+            {waitingLabel(events)}
+          </li>
+        )}
       </ul>
     </div>
   )

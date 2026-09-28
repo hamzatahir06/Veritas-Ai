@@ -16,10 +16,12 @@ research already gathered (see Gathered) and continues from there.
 
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from functools import partial
 
 from google import genai
+from google.genai import errors as gerrors
 from google.genai import types as gtypes
 from openai import OpenAI
 from tavily import TavilyClient
@@ -39,6 +41,13 @@ GROQ_MODEL = "openai/gpt-oss-120b"
 GROQ_MAX_ITERATIONS = 3  # Groq's free tier has a much smaller token budget
 GROQ_RESULT_CHARS = 3000  # per tool result — results are ranked best-first, so trimming drops the weakest
 GROQ_CARRYOVER_CHARS = 12_000  # research carried over from a failed attempt, across all its searches
+
+# A model that just answered overloaded / rate-limited / not-found is skipped
+# for this long, so later runs don't each wait for the same refusal (~2s).
+# Only these API refusals count: a model that answered badly is not "down".
+UNAVAILABLE_CODES = {404, 429, 503}
+COOLDOWN_SECONDS = 300
+_cooling_until: dict[str, float] = {}
 
 STOP_SEARCHING = "Stop searching now and write the final research brief in markdown using only the information already gathered."
 
@@ -125,6 +134,7 @@ def run_research(topic: str):
     Tries each provider loop in order, falling back on any failure. Yields
     the same event shapes no matter which provider ends up serving it:
       {"type": "chat_reply", "message": str}   # non-research message; stream ends here
+      {"type": "planning"}                     # confirmed research; the model is choosing searches
       {"type": "searching", "query": str}
       {"type": "found", "query": str, "count": int, "sources": [{"title", "url"}]}
       {"type": "limit_reached"}
@@ -144,6 +154,7 @@ def run_research(topic: str):
         # the UI (it clears the loading spinner without needing a `done`).
         yield {"type": "chat_reply", "message": reply}
         return
+    yield {"type": "planning"}
 
     # One toolset and one record of what's been found for the whole run: a
     # fallback provider continues from the research already gathered instead
@@ -152,13 +163,17 @@ def run_research(topic: str):
     gathered = Gathered()
     providers = [(model, partial(_run_with_gemini, model=model)) for model in GEMINI_MODELS]
     providers.append(("groq", _run_with_groq))
+    # Every provider cooling down still beats none: then all are tried.
+    available = [p for p in providers if _cooling_until.get(p[0], 0) <= time.monotonic()] or providers
 
     last_error = None
-    for name, provider_fn in providers:
+    for name, provider_fn in available:
         try:
             yield from provider_fn(topic, toolset, gathered)
             return
         except Exception as e:
+            if isinstance(e, gerrors.APIError) and e.code in UNAVAILABLE_CODES:
+                _cooling_until[name] = time.monotonic() + COOLDOWN_SECONDS
             yield {"type": "provider_failed", "provider": name, "error": str(e)}
             last_error = e
 

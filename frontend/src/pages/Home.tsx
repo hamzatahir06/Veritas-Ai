@@ -96,8 +96,7 @@ export default function Home() {
                   {/* The trail outlives the run: it stays (collapsed) once the
                       brief renders, so the sources behind each search are
                       reopenable without scrolling to the bottom of the result. */}
-                  {(turn.status === 'streaming' || turn.status === 'done') &&
-                    turn.progress.length > 0 && (
+                  {(turn.status === 'streaming' || (turn.status === 'done' && turn.progress.length > 0)) && (
                       <StreamingProgress
                         events={turn.progress}
                         done={turn.status === 'done'}

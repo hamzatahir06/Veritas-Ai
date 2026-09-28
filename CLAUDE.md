@@ -63,9 +63,9 @@ cd frontend && npm install && npm run dev      # localhost:5173
   streaming. `save_failed` ≠ `error` (which is fatal).
 - Always get the Supabase client from the **`get_supabase`** dependency, never ad hoc.
 - **`agent/core.py` imports no FastAPI/Supabase** — keep it that way (CLI/worker-reusable).
-- **SSE events** (`text/event-stream`): `chat_reply · searching · found · limit_reached · provider_failed · save_failed · done · error`.
+- **SSE events** (`text/event-stream`): `chat_reply · planning · searching · found · limit_reached · provider_failed · save_failed · done · error`.
   - Non-research input → `chat_reply` only, then the stream ends. No `done`, nothing saved.
-  - Research → provider loop, ends with `done` = `{project_id, saved, topic, markdown, sources, provider}`.
+  - Research → `planning` (classifier passed), then the provider loop, which ends with `done` = `{project_id, saved, topic, markdown, sources, provider}`.
 - **Provider fallback is the design:** any exception → `provider_failed` → next provider, which
   continues from the research already gathered (`Gathered` in `agent/core.py`: one sources list
   and citation numbering for the whole run) instead of starting over. `_require_markdown()` converts an empty/blocked model
