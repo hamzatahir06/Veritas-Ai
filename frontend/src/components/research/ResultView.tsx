@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { API_BASE, authHeader, jsonHeaders, type DoneEvent } from '../../lib/api'
 import { PdfIcon, WordIcon } from './DocumentIcons'
 
@@ -43,6 +44,12 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
   )
 
   const markdownComponents: Components = {
+    // Wide tables scroll inside the card instead of stretching it on phones.
+    table: ({ children }) => (
+      <div className="overflow-x-auto">
+        <table>{children}</table>
+      </div>
+    ),
     a: ({ href, children }) => {
       if (href?.startsWith(CITE_HREF)) {
         const source = uniqueSources[Number(href.slice(CITE_HREF.length)) - 1]
@@ -130,7 +137,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
     <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
       {/* Brief Body */}
       <div className="markdown-content text-ink/90">
-        <ReactMarkdown components={markdownComponents}>{briefMarkdown}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{briefMarkdown}</ReactMarkdown>
       </div>
 
       {/* Sources & Citations */}
