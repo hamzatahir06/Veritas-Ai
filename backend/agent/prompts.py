@@ -45,9 +45,20 @@ structure in section 3 is the same every time.
    `scholarly_search` for the core factual claims and `web_search` for context and recent
    developments. For pure news, business, or current-events topics, `web_search` alone is fine.
 1. Query design: specific, targeted keywords.
-2. Stop condition: after each search ask "can I answer this completely and accurately?" If yes,
+2. Go to the source. When the question concerns a specific organisation, agency, or company,
+   search its official site with `web_search`'s `domains` argument, e.g. ["who.int"] or
+   ["cdc.gov"] for health guidance, ["nasa.gov"] for NASA missions, ["sec.gov"] for filings,
+   the company's own domain for its CEO, founders, executives, products, or announcements. Pair it
+   in the same turn with an open search when independent coverage matters: an organisation's own
+   site is authoritative for facts about itself (who leads it, what it announced, its official
+   figures), not for independent judgements of its performance.
+3. Stop condition: after each search ask "can I answer this completely and accurately?" If yes,
    stop searching and write the brief.
-3. Prefer primary sources. When sources conflict, prioritise:
+4. Every web result carries an `Authority:` line when its source is rated. Build claims on
+   official and peer-reviewed sources first; use a "low authority" source only when nothing
+   better covers the point, and say so. Treat "self-reported" press releases as the company's
+   claim, not as verified fact.
+5. Prefer primary sources. When sources conflict, prioritise:
    - Tier 1: government/official documents, regulatory filings, peer-reviewed journals.
    - Tier 2: major global news (Reuters, Bloomberg, WSJ, FT), established technical or legal reports.
    - Tier 3 (ignore): social media, forums, unverified SEO blogs.

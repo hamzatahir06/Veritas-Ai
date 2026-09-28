@@ -309,7 +309,11 @@ def _run_with_groq(topic: str, toolset: Toolset, gathered: Gathered):
         {"role": "user", "content": gathered.opening(topic, max_chars=GROQ_CARRYOVER_CHARS)},
     ]
 
-    for _ in range(GROQ_MAX_ITERATIONS):
+    # Groq's free tier allows 8K tokens a minute. Taking over a run, the carried
+    # research plus any new results would exceed that on the second call, so
+    # it writes from what is already gathered, which is why it was carried over.
+    search_turns = 0 if gathered.results else GROQ_MAX_ITERATIONS
+    for _ in range(search_turns):
         response = client.chat.completions.create(
             model=GROQ_MODEL, messages=messages, tools=toolset.schemas, timeout=30,
         )
@@ -333,7 +337,8 @@ def _run_with_groq(topic: str, toolset: Toolset, gathered: Gathered):
             for tc, text in zip(choice.tool_calls, results)
         )
 
-    yield {"type": "limit_reached"}
+    if search_turns:
+        yield {"type": "limit_reached"}
     messages.append({"role": "user", "content": STOP_SEARCHING})
     final = client.chat.completions.create(model=GROQ_MODEL, messages=messages, timeout=30)
     markdown = _require_markdown(lambda: final.choices[0].message.content, "Groq")
