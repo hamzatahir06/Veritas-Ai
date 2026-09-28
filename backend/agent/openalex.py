@@ -17,6 +17,7 @@ from datetime import date, timedelta
 
 import requests
 
+from core.config import get_settings
 from agent.tools import (
     RECENCY_DAYS, Recency, LOG_SNIPPET_LIMIT, CONTENT_LIMIT, MIN_RESULTS_BEFORE_WIDENING,
     REF_PLACEHOLDER, drop_stale_years, top_up,
@@ -100,10 +101,15 @@ def _best_url(work: dict) -> str:
 
 
 def _fetch(query: str, recency: str | None) -> list[dict]:
-    params = {"search": query, "per_page": MAX_RESULTS, "select": _SELECT_FIELDS}
+    # A work without an abstract gives the model a title and nothing to cite;
+    # a retracted one is not evidence.
+    filters = ["has_abstract:true", "is_retracted:false"]
     if recency:
         since = date.today() - timedelta(days=RECENCY_DAYS[recency])
-        params["filter"] = f"from_publication_date:{since.isoformat()}"
+        filters.append(f"from_publication_date:{since.isoformat()}")
+    params = {"search": query, "per_page": MAX_RESULTS, "select": _SELECT_FIELDS, "filter": ",".join(filters)}
+    if api_key := get_settings().openalex_api_key:
+        params["api_key"] = api_key
     resp = requests.get(OPENALEX_URL, params=params, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json().get("results", [])

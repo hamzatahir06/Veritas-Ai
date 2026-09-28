@@ -71,7 +71,10 @@ WEB_SEARCH_SCHEMA = {
 
 MAX_RESULTS = 5
 LOG_SNIPPET_LIMIT = 300        # stored with the project / shown in the UI
-CONTENT_LIMIT = 1200           # what the model reads per result
+# What the model reads per result. Advanced-depth Tavily content is already the
+# page's most relevant chunks (~1-2.5K chars), and an abstract's conclusion sits
+# at its end, so this is a runaway guard, not a trim.
+CONTENT_LIMIT = 3000
 
 # Stands in for a result's citation number while the tool is running. A tool
 # can't know its results' final numbers — those depend on what earlier
@@ -183,17 +186,26 @@ def make_web_search(tavily_client: TavilyClient, topic: str):
         response = tavily_client.search(
             query=query, max_results=8, search_depth="advanced",
             topic=category, time_range=recency, timeout=SEARCH_TIMEOUT,
+            # Excluded at the source so they don't take result slots; the
+            # filter below still catches any subdomain that slips through.
+            exclude_domains=list(HARD_EXCLUDE_DOMAINS),
         )
         candidates = [
             r for r in response.get("results", [])
             if r.get("score", 0) >= MIN_RELEVANCE_SCORE
             and not any(bad in domain_of(r.get("url", "")) for bad in HARD_EXCLUDE_DOMAINS)
         ]
-        return sorted(
+        ranked = sorted(
             candidates,
             key=lambda r: r.get("score", 0) * _authority_weight(r.get("url", ""), topic_keywords),
             reverse=True,
-        )[:MAX_RESULTS]
+        )
+        # One page per title: an article and its /amp or syndicated copy would
+        # otherwise fill two of the five slots with the same evidence.
+        unique = {}
+        for r in ranked:
+            unique.setdefault((r.get("title") or "").strip().lower() or r.get("url"), r)
+        return list(unique.values())[:MAX_RESULTS]
 
     def web_search(
         query: str, recency: Recency | None = None, category: Category = "general",

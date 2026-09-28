@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     gemini_api_key: str
     tavily_api_key: str
     groq_api_key: str | None = None
+    # Optional free key: without it OpenAlex throttles anonymous search under load.
+    openalex_api_key: str | None = None
     # One origin, or a comma-separated list, allowed to call the API from a browser.
     frontend_origin: str = "http://localhost:5173"
 
