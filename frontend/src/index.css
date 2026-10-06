@@ -28,8 +28,30 @@
   to { stroke-dashoffset: -10; } /* one dash period (7 + 3) → seamless loop */
 }
 
+/* Live research status: each new phrase slides up into place, and a brand-colored sheen keeps
+   sweeping across the text so the line never looks frozen between phrase changes. */
+.status-phrase {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--color-ink) 40%, var(--color-brand) 50%, var(--color-ink) 60%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: status-in 0.35s ease-out, status-sheen 2.2s linear infinite;
+}
+
+@keyframes status-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+@keyframes status-sheen {
+  from { background-position: 100% 0; }
+  to { background-position: -150% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .prompt-dash { animation: none; }
+  .status-phrase { animation: none; color: var(--color-ink); }
 }
 
 .markdown-content h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }

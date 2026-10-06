@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { StreamEvent } from '../../lib/api'
 
 /** Host without "www.", e.g. "https://www.nature.com/x" -> "nature.com". */
@@ -39,14 +39,45 @@ function underItsSearch(events: StreamEvent[]): Row[] {
 }
 
 /**
- * What a live run is doing while no search is in flight, so the box is never
- * silent: before the backend has read the question, while the model picks
- * its searches, and while it works through the results and writes.
+ * What a live run is doing, as a few phrases per phase that take turns so the
+ * box keeps moving even while a single step takes a while: before the backend
+ * has read the question, while the model picks its searches, while searches
+ * are in flight, and while it works through the results and writes.
  */
-function waitingLabel(events: StreamEvent[]): string {
-  if (events.length === 0) return 'Reading your question…'
-  if (!events.some((e) => e.type === 'searching')) return 'Planning the research…'
-  return 'Analysing the sources…'
+const PHASE_PHRASES = {
+  reviewing: ['Reviewing your inquiry…', 'Understanding what you need…', 'Framing the research question…'],
+  planning: ['Planning the research…', 'Choosing where to look…', 'Drafting search queries…'],
+  searching: ['Searching the web…', 'Checking scholarly literature…', 'Collecting relevant sources…', 'Filtering out weak sources…'],
+  analysing: ['Analysing the sources…', 'Cross-checking the evidence…', 'Weighing source credibility…', 'Connecting the findings…', 'Writing the brief…'],
+} as const
+
+type Phase = keyof typeof PHASE_PHRASES
+
+function phaseOf(events: StreamEvent[], searchRunning: boolean): Phase {
+  if (events.length === 0) return 'reviewing'
+  if (searchRunning) return 'searching'
+  if (!events.some((e) => e.type === 'searching')) return 'planning'
+  return 'analysing'
+}
+
+const PHRASE_MS = 2600
+
+/** Cycles through a phase's phrases; keyed by phase, so a new phase starts at its first one. */
+function StatusLine({ phase }: { phase: Phase }) {
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), PHRASE_MS)
+    return () => clearInterval(id)
+  }, [])
+  const phrases = PHASE_PHRASES[phase]
+  const phrase = phrases[tick % phrases.length]
+  return (
+    <li className="flex items-center gap-2 text-sm font-medium" aria-live="polite">
+      <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-brand" />
+      {/* Keyed by text so each new phrase remounts and replays its entrance. */}
+      <span key={phrase} className="status-phrase">{phrase}</span>
+    </li>
+  )
 }
 
 type StreamingProgressProps = {
@@ -87,6 +118,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
 
   const rows = underItsSearch(events)
   const searchRunning = rows.some((r) => r.event.type === 'searching' && !r.answered)
+  const phase = phaseOf(events, searchRunning)
 
   return (
     <div className="rounded-2xl border border-black/25 bg-white p-5">
@@ -180,12 +212,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
 
           return null
         })}
-        {!done && !searchRunning && (
-          <li className="flex items-center gap-2 text-sm text-ink">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
-            {waitingLabel(events)}
-          </li>
-        )}
+        {!done && <StatusLine key={phase} phase={phase} />}
       </ul>
     </div>
   )
