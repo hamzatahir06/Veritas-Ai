@@ -15,11 +15,13 @@ research already gathered (see Gathered) and continues from there.
 """
 
 import json
+import logging
 import re
 import time
 from dataclasses import dataclass, field
 from functools import partial
 
+import httpx
 from google import genai
 from google.genai import errors as gerrors
 from google.genai import types as gtypes
@@ -30,6 +32,8 @@ from agent.classifier import classify
 from agent.prompts import build_system_prompt
 from agent.toolset import Toolset, build_toolset
 from core.config import GROQ_BASE_URL, get_settings
+
+log = logging.getLogger(__name__)
 
 # Newest first. Each model has a separate free-tier quota, so falling through
 # the list also multiplies the daily research capacity.
@@ -42,10 +46,11 @@ GROQ_MAX_ITERATIONS = 3  # Groq's free tier has a much smaller token budget
 GROQ_RESULT_CHARS = 3000  # per tool result — results are ranked best-first, so trimming drops the weakest
 GROQ_CARRYOVER_CHARS = 12_000  # research carried over from a failed attempt, across all its searches
 
-# A model that just answered overloaded / rate-limited / not-found is skipped
-# for this long, so later runs don't each wait for the same refusal (~2s).
-# Only these API refusals count: a model that answered badly is not "down".
-UNAVAILABLE_CODES = {404, 429, 503}
+# A model that just answered overloaded / rate-limited / not-found / timed out
+# is skipped for this long, so later runs don't each wait for the same refusal
+# (~2s, or the full timeout for a 504 / client timeout). Only these count: a
+# model that answered badly is not "down".
+UNAVAILABLE_CODES = {404, 429, 500, 503, 504}
 COOLDOWN_SECONDS = 300
 _cooling_until: dict[str, float] = {}
 
@@ -172,7 +177,8 @@ def run_research(topic: str):
             yield from provider_fn(topic, toolset, gathered)
             return
         except Exception as e:
-            if isinstance(e, gerrors.APIError) and e.code in UNAVAILABLE_CODES:
+            log.warning("provider %s failed: %s: %s", name, type(e).__name__, e)
+            if (isinstance(e, gerrors.APIError) and e.code in UNAVAILABLE_CODES) or isinstance(e, httpx.TimeoutException):
                 _cooling_until[name] = time.monotonic() + COOLDOWN_SECONDS
             yield {"type": "provider_failed", "provider": name, "error": str(e)}
             last_error = e
