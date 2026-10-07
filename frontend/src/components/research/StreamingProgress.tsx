@@ -119,6 +119,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
   const rows = underItsSearch(events)
   const searchRunning = rows.some((r) => r.event.type === 'searching' && !r.answered)
   const phase = phaseOf(events, searchRunning)
+  const firstSwitch = events.findIndex((e) => e.type === 'provider_failed')
 
   return (
     <div className="rounded-2xl border border-black/25 bg-white p-5">
@@ -202,10 +203,13 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
             )
           }
 
+          // Model names mean nothing to users, and several fallbacks in a row
+          // read as alarming: one neutral line at the first switch says it all.
           if (event.type === 'provider_failed') {
+            if (i !== firstSwitch) return null
             return (
-              <li key={i} className="pl-3.5 text-sm text-amber-600">
-                {event.provider} unavailable, switching provider…
+              <li key={i} className="pl-3.5 text-sm text-ink">
+                Switching to a backup model…
               </li>
             )
           }
