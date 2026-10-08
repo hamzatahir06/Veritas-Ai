@@ -13,25 +13,42 @@ result rather than raising — this is a supplementary source and must not take
 down an otherwise-fine run.
 """
 
+import math
+import re
 from datetime import date, timedelta
+from typing import Container
 
 import requests
 
 from core.config import get_settings
 from agent.tools import (
     RECENCY_DAYS, Recency, LOG_SNIPPET_LIMIT, CONTENT_LIMIT, MIN_RESULTS_BEFORE_WIDENING,
-    REF_PLACEHOLDER, drop_stale_years, top_up,
+    REF_PLACEHOLDER, drop_stale_years, pick, top_up,
 )
 
 OPENALEX_URL = "https://api.openalex.org/works"
 MAX_RESULTS = 5
+# OpenAlex's own top 5 drifts fast: past the first few hits it matches single
+# words ("broker" -> real-estate and arms brokering). A wider pool, filtered
+# and re-ranked here, is one request either way.
+CANDIDATE_POOL = 25
 REQUEST_TIMEOUT = 20
+# Research output only: drops podcast episodes, datasets, dissertations,
+# editorials and the like, which the index also holds.
+PAPER_TYPES = "article|review|preprint|conference-paper|book-chapter|report"
+# Share of the query's terms a work's title + abstract must contain.
+MIN_TERM_COVERAGE = 0.6
+# How much citations per year lift a work over its raw relevance. Kept small:
+# relevance decides, citations break near-ties toward work the field relies on.
+CITATION_WEIGHT = 0.2
 
 # Whole objects (not dotted paths) — keeps the payload small but robust.
 _SELECT_FIELDS = ",".join((
     "id", "doi", "title", "publication_year", "publication_date", "cited_by_count",
     "authorships", "primary_location", "open_access", "abstract_inverted_index",
+    "relevance_score",
 ))
+_TERM = re.compile(r"[a-z]{4,}")
 
 SCHOLARLY_SEARCH_SCHEMA = {
     "type": "function",
@@ -103,11 +120,11 @@ def _best_url(work: dict) -> str:
 def _fetch(query: str, recency: str | None) -> list[dict]:
     # A work without an abstract gives the model a title and nothing to cite;
     # a retracted one is not evidence.
-    filters = ["has_abstract:true", "is_retracted:false"]
+    filters = ["has_abstract:true", "is_retracted:false", f"type:{PAPER_TYPES}"]
     if recency:
         since = date.today() - timedelta(days=RECENCY_DAYS[recency])
         filters.append(f"from_publication_date:{since.isoformat()}")
-    params = {"search": query, "per_page": MAX_RESULTS, "select": _SELECT_FIELDS, "filter": ",".join(filters)}
+    params = {"search": query, "per_page": CANDIDATE_POOL, "select": _SELECT_FIELDS, "filter": ",".join(filters)}
     if api_key := get_settings().openalex_api_key:
         params["api_key"] = api_key
     resp = requests.get(OPENALEX_URL, params=params, timeout=REQUEST_TIMEOUT)
@@ -115,21 +132,56 @@ def _fetch(query: str, recency: str | None) -> list[dict]:
     return resp.json().get("results", [])
 
 
-def make_scholarly_search(topic: str):
+def _covers(work: dict, terms: set[str]) -> bool:
+    """
+    The work's title + abstract contain most of the query's terms.
+
+    Matched on a term's first five letters, a cheap stem: "brokers" matches
+    "broker" and "brokerage", "tracking" matches "tracked".
+    """
+    if not terms:
+        return True
+    text = f"{work.get('title') or ''} {_abstract_from_inverted_index(work.get('abstract_inverted_index'))}".lower()
+    hits = sum(term[:5] in text for term in terms)
+    return hits >= MIN_TERM_COVERAGE * len(terms)
+
+
+def _score(work: dict) -> float:
+    """OpenAlex relevance, nudged up by citations per year since publication, so
+    a new paper isn't buried under old ones just for having had less time."""
+    age = max(date.today().year - (work.get("publication_year") or date.today().year), 0) + 1
+    per_year = (work.get("cited_by_count") or 0) / age
+    return (work.get("relevance_score") or 0) * (1 + CITATION_WEIGHT * math.log1p(per_year))
+
+
+def _best(query: str, recency: str | None) -> list[dict]:
+    """The pool for a query, on-topic works only, best first, one per title
+    (a preprint and its published version are the same evidence)."""
+    terms = set(_TERM.findall(query.lower()))
+    works = sorted((w for w in _fetch(query, recency) if _covers(w, terms)), key=_score, reverse=True)
+    unique: dict[str, dict] = {}
+    for w in works:
+        unique.setdefault((w.get("title") or "").strip().lower() or w.get("id"), w)
+    return list(unique.values())
+
+
+def make_scholarly_search(topic: str, seen: Container[str] = ()):
+    """`seen` holds the URLs the run has already found (see tools.pick())."""
     def scholarly_search(query: str, recency: Recency | None = None) -> tuple[str, list[dict]]:
         recency = recency if recency in RECENCY_DAYS else None
         if recency:
             query = drop_stale_years(query, topic)
 
         try:
-            works = _fetch(query, recency)
+            works = _best(query, recency)
         except Exception as e:
             # Supplementary source — never break the run over it.
             return f"Scholarly search unavailable for this query ({e}).", []
 
         widened = False
         if recency and len(works) < MIN_RESULTS_BEFORE_WIDENING:
-            works, widened = top_up(works, lambda: _fetch(query, None), "id", MAX_RESULTS)
+            works, widened = top_up(works, lambda: _best(query, None), "id", CANDIDATE_POOL)
+        works = pick(works, _best_url, seen, MAX_RESULTS)
 
         if not works:
             return "No peer-reviewed results found for this query.", []

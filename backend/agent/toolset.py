@@ -120,9 +120,13 @@ class Toolset:
 
 
 def build_toolset(tavily_client: TavilyClient, topic: str) -> Toolset:
-    web_search = make_web_search(tavily_client, topic)
-    scholarly_search = make_scholarly_search(topic)
+    # The run's url -> citation number map doubles as "already found": the
+    # tools read it to give new pages their result slots first.
+    refs: dict[str, int] = {}
+    web_search = make_web_search(tavily_client, topic, refs)
+    scholarly_search = make_scholarly_search(topic, refs)
     return Toolset(
         schemas=[WEB_SEARCH_SCHEMA, SCHOLARLY_SEARCH_SCHEMA],
         _dispatch={"web_search": web_search, "scholarly_search": scholarly_search},
+        _refs=refs,
     )

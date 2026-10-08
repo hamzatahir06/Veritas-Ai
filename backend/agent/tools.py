@@ -13,6 +13,8 @@ Reliability comes first, in three layers, all deterministic and in code:
      publishers, wire services and major outlets next; SEO market-report farms
      and social media last; a few near-zero-signal domains are excluded. Each
      result tells the model its tier, so it knows what it is citing.
+  4. Breadth (pick()): at most two results per site in an open search, and
+     pages the run already found give their slots to new ones.
 
 Freshness is opt-in per call: the model sets `recency` / `category` only for
 time-sensitive questions, with the same automatic widening.
@@ -23,7 +25,7 @@ is reported to the model as unavailable so the rest of the run continues.
 
 import re
 from datetime import date
-from typing import Literal
+from typing import Container, Literal
 from urllib.parse import urlparse
 
 from tavily import TavilyClient
@@ -89,6 +91,7 @@ MAX_RESULTS = 5
 # the authority ranking official pages to promote.
 CANDIDATE_POOL = 15
 MAX_DOMAINS = 5
+PER_SITE_LIMIT = 2             # results from one site in an open search
 LOG_SNIPPET_LIMIT = 300        # stored with the project / shown in the UI
 # What the model reads per result. Advanced-depth Tavily content is already the
 # page's most relevant chunks (~1-2.5K chars), and an abstract's conclusion sits
@@ -262,7 +265,32 @@ def top_up(results: list[dict], fetch_unfiltered, key: str, limit: int) -> tuple
     return results + extra[:limit - len(results)], bool(extra)
 
 
-def make_web_search(tavily_client: TavilyClient, topic: str):
+def pick(candidates: list[dict], url_of, seen: Container[str], limit: int, per_site: int | None = None) -> list[dict]:
+    """
+    The `limit` results to show, from candidates already ranked best first.
+
+    A page an earlier search in the run already found adds nothing the model
+    hasn't read, so new pages fill the slots first. With `per_site`, no site
+    takes more than that many of them, so one site can't make up the whole
+    answer. Pages held back by either rule only fill slots nothing else can,
+    and the site cap gives way first: a further page from the same site is
+    still new evidence, a repeat is not.
+    """
+    counts: dict[str, int] = {}
+    first, overflow, repeats = [], [], []
+    for c in candidates:
+        url = url_of(c)
+        if url in seen:
+            repeats.append(c)
+            continue
+        site = domain_of(url)
+        counts[site] = counts.get(site, 0) + 1
+        (first if not per_site or counts[site] <= per_site else overflow).append(c)
+    return (first + overflow + repeats)[:limit]
+
+
+def make_web_search(tavily_client: TavilyClient, topic: str, seen: Container[str] = ()):
+    """`seen` holds the URLs the run has already found (see pick())."""
     topic_keywords = _topic_keywords(topic)
 
     def _ranked(
@@ -291,7 +319,11 @@ def make_web_search(tavily_client: TavilyClient, topic: str):
         unique = {}
         for r in ranked:
             unique.setdefault((r.get("title") or "").strip().lower() or r.get("url"), r)
-        return list(unique.values())[:MAX_RESULTS]
+        # No site cap when the search was aimed at sites: those are the point.
+        return pick(
+            list(unique.values()), lambda r: r.get("url", ""), seen, MAX_RESULTS,
+            per_site=None if domains else PER_SITE_LIMIT,
+        )
 
     def web_search(
         query: str, recency: Recency | None = None, category: Category = "general",
