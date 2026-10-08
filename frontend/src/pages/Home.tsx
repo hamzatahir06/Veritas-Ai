@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import HeroBanner from '../components/landing/HeroBanner'
 import LandingPromos from '../components/landing/LandingPromos'
 import PromptBox from '../components/research/PromptBox'
+import PromptBubble from '../components/research/PromptBubble'
 import WelcomeGreeting from '../components/research/WelcomeGreeting'
 import SuggestedTopics from '../components/research/SuggestedTopics'
 import StreamingProgress from '../components/research/StreamingProgress'
@@ -87,11 +88,7 @@ export default function Home() {
                   ref={isLast ? lastTurnRef : null}
                   className="flex flex-col gap-4 scroll-mt-6"
                 >
-                  <div className="flex justify-end">
-                    <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-brand px-4 py-2.5 text-white">
-                      {turn.topic}
-                    </div>
-                  </div>
+                  <PromptBubble topic={turn.topic} />
 
                   {/* The trail outlives the run: it stays (collapsed) once the
                       brief renders, so the sources behind each search are

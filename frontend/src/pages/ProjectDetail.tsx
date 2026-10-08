@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import PromptBubble from '../components/research/PromptBubble'
 import ResultView from '../components/research/ResultView'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
@@ -35,6 +36,7 @@ export default function ProjectDetail() {
         <Link to="/projects" className="text-sm text-ink/50 hover:text-ink">
           ← Back to Projects
         </Link>
+        <PromptBubble topic={project.topic} />
         <ResultView
           result={{
             type: 'done',
