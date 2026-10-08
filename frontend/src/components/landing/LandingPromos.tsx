@@ -216,7 +216,7 @@ export default function LandingPromos() {
           {OFFICIAL_SOURCES.map((name) => (
             <span
               key={name}
-              className="flex items-center justify-center gap-2 rounded-xl border border-black/15 bg-white py-2.5 px-3 shadow-2xs"
+              className="flex items-center justify-center gap-2 rounded-xl border-2 border-black bg-white py-2.5 px-3 shadow-2xs"
             >
               <span className="h-2 w-2 rounded-full bg-brand" />
               {name}
