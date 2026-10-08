@@ -14,9 +14,9 @@ instead of spending search credits again.
 import inspect
 import json
 import threading
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Callable, Iterator
 
 from tavily import TavilyClient
 

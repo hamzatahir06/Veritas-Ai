@@ -24,8 +24,9 @@ is reported to the model as unavailable so the rest of the run continues.
 """
 
 import re
+from collections.abc import Container
 from datetime import date
-from typing import Container, Literal
+from typing import Literal
 from urllib.parse import urlparse
 
 from tavily import TavilyClient

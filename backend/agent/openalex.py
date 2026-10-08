@@ -15,8 +15,8 @@ down an otherwise-fine run.
 
 import math
 import re
+from collections.abc import Container
 from datetime import date, timedelta
-from typing import Container
 
 import requests
 
