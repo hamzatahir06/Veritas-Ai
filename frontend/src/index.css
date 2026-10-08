@@ -49,8 +49,29 @@
   to { background-position: -150% 0; }
 }
 
+/* Home-page field badges: each row slides left by one of its two copies, forever. The second
+   row runs the other way, and hovering anywhere on the strip pauses both so a badge can be read. */
+.marquee-track {
+  animation: marquee-run 38s linear infinite;
+}
+.marquee-reverse {
+  animation-direction: reverse;
+  animation-duration: 44s;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-run {
+  to { transform: translateX(-50%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .prompt-dash { animation: none; }
+  /* Still: one copy of each row, wrapped and centred. */
+  .marquee-track { animation: none; width: auto; justify-content: center; }
+  .marquee-track > div { flex-wrap: wrap; justify-content: center; padding: 0 1rem; }
+  .marquee-track > div[aria-hidden="true"] { display: none; }
   .status-phrase { animation: none; color: var(--color-ink); }
 }
 
