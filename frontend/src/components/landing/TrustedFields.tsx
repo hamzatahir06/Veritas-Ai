@@ -26,8 +26,8 @@ const ROWS: Field[][] = [
 
 function Badge({ field }: { field: Field }) {
   return (
-    <span className="group flex shrink-0 items-center gap-2.5 rounded-full border-2 border-ink bg-white py-1.5 pl-1.5 pr-4 text-sm font-semibold text-ink transition-all duration-300 hover:-translate-y-0.5 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md">
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-white transition-colors duration-300 group-hover:bg-white group-hover:text-brand">
+    <span className="group flex shrink-0 items-center gap-2.5 rounded-full border-2 border-white bg-black py-1.5 pl-1.5 pr-4 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-brand hover:bg-brand hover:text-black hover:shadow-[0_6px_20px_-4px_var(--color-brand)]">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-black transition-colors duration-300 group-hover:bg-black group-hover:text-brand">
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           {field.icon.map((d) => <path key={d} d={d} />)}
         </svg>
@@ -39,24 +39,23 @@ function Badge({ field }: { field: Field }) {
 
 export default function TrustedFields() {
   return (
-    <section className="flex flex-col items-center gap-4 text-center">
-      <h3 className="text-xs font-extrabold uppercase tracking-widest text-ink sm:text-sm">
-        Built for professionals in critical fields
+    // A brand glow rising from the top edge lifts the black panel off the page.
+    <section className="marquee flex w-full flex-col gap-3 overflow-hidden rounded-2xl border-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,_rgb(53_182_158_/_0.28),_transparent_65%)] py-6 text-center shadow-lg">
+      <h3 className="mb-2 px-4 text-xs font-extrabold uppercase tracking-widest text-white sm:text-sm">
+        Built for professionals in <span className="text-brand">critical fields</span>
       </h3>
 
-      <div className="marquee flex w-full flex-col gap-3 overflow-hidden rounded-2xl border border-black bg-white py-5">
-        {ROWS.map((row, r) => (
-          // The track holds the row twice and slides by exactly one copy, so
-          // the loop has no seam. Each copy carries its own trailing gap.
-          <div key={r} className={`marquee-track flex w-max ${r % 2 ? 'marquee-reverse' : ''}`}>
-            {[0, 1].map((copy) => (
-              <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy === 1}>
-                {row.map((field) => <Badge key={field.name} field={field} />)}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
+      {ROWS.map((row, r) => (
+        // The track holds the row twice and slides by exactly one copy, so
+        // the loop has no seam. Each copy carries its own trailing gap.
+        <div key={r} className={`marquee-track flex w-max ${r % 2 ? 'marquee-reverse' : ''}`}>
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy === 1}>
+              {row.map((field) => <Badge key={field.name} field={field} />)}
+            </div>
+          ))}
+        </div>
+      ))}
     </section>
   )
 }
