@@ -50,7 +50,7 @@ GROQ_CARRYOVER_CHARS = 12_000  # research carried over from a failed attempt, ac
 # is skipped for this long, so later runs don't each wait for the same refusal
 # (~2s, or the full timeout for a 504 / client timeout). Only these count: a
 # model that answered badly is not "down".
-UNAVAILABLE_CODES = {404, 429, 500, 503, 504}
+UNAVAILABLE_CODES = {404, 429, 499, 500, 503, 504}  # 499: Google cancelled it at our timeout
 COOLDOWN_SECONDS = 300
 _cooling_until: dict[str, float] = {}
 
