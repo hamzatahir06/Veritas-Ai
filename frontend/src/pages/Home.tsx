@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import HeroBanner from '../components/landing/HeroBanner'
 import LandingPromos from '../components/landing/LandingPromos'
+import TrustedFields from '../components/landing/TrustedFields'
 import PromptBox from '../components/research/PromptBox'
 import PromptBubble from '../components/research/PromptBubble'
 import WelcomeGreeting from '../components/research/WelcomeGreeting'
@@ -65,11 +66,19 @@ export default function Home() {
           </div>
 
           <SuggestedTopics onSelect={askTopic} />
-
-          {/* Promotional Content (Shown for unauthenticated users on scroll) */}
-          {!isSignedIn && <LandingPromos />}
         </div>
-        {!isSignedIn && <Footer />}
+
+        {/* Promotional content for signed-out visitors. The fields band sits
+            outside the centred column so it runs edge to edge. */}
+        {!isSignedIn && (
+          <>
+            <TrustedFields />
+            <div className="mx-auto w-full max-w-4xl px-4">
+              <LandingPromos />
+            </div>
+            <Footer />
+          </>
+        )}
       </div>
     )
   }

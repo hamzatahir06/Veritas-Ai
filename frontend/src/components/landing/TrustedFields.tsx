@@ -39,8 +39,10 @@ function Badge({ field }: { field: Field }) {
 
 export default function TrustedFields() {
   return (
-    // A brand glow rising from the top edge lifts the black panel off the page.
-    <section className="marquee flex w-full flex-col gap-3 overflow-hidden rounded-2xl border-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,_rgb(53_182_158_/_0.28),_transparent_65%)] py-6 text-center shadow-lg">
+    // A full-width band (Home places it outside the centred column). A brand
+    // glow rising from the top edge lifts it off the page. shrink-0: in Home's
+    // flex column, overflow-hidden would otherwise let it collapse to nothing.
+    <section className="marquee mt-6 flex shrink-0 flex-col gap-3 overflow-hidden border-y-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,_rgb(53_182_158_/_0.28),_transparent_65%)] py-6 text-center shadow-lg">
       <h3 className="mb-2 px-4 text-xs font-extrabold uppercase tracking-widest text-white sm:text-sm">
         Built for professionals in <span className="text-brand">critical fields</span>
       </h3>

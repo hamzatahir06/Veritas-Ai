@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import TrustedFields from './TrustedFields'
 
 /* ------------------------------------------------------------------ *
  * Content — edit copy here; the markup below is generic and reused.  *
@@ -205,8 +204,7 @@ export default function LandingPromos() {
   const [analyticsRef, analyticsInView] = useInView<HTMLElement>()
 
   return (
-    <div className="mt-8 flex w-full flex-col gap-12 pb-12">
-      <TrustedFields />
+    <div className="mt-12 flex w-full flex-col gap-12 pb-12">
 
       {/* ---------------- 1. CREDIBLE SOURCES ---------------- */}
       <div id="sources" className="flex scroll-mt-6 flex-col items-center gap-4 text-center">
