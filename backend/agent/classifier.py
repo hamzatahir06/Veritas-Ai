@@ -62,7 +62,7 @@ def classify(topic: str) -> tuple[bool, str]:
                 model="openai/gpt-oss-20b",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=400,
+                max_completion_tokens=400,
                 reasoning_effort="low",
                 timeout=10,
             )

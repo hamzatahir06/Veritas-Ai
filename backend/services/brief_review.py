@@ -38,9 +38,9 @@ KEY_FINDINGS_MIN = 3
 KEY_FINDINGS_MAX = 7
 MAX_HEADING_DEPTH = 3
 
-_EMOJI = re.compile(
-    "[\U0001F300-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF⬀-⯿]"
-)
+# Pictographs proper, plus any BMP symbol the model gave emoji presentation
+# (U+FE0F: "⚠️", "✔️"). A bare "✓" or "★" in a table is punctuation, not emoji.
+_EMOJI = re.compile("[\U0001F000-\U0001FAFF]|[☀-⯿]️")
 
 
 @dataclass

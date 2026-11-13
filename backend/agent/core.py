@@ -25,7 +25,7 @@ import httpx
 from google import genai
 from google.genai import errors as gerrors
 from google.genai import types as gtypes
-from openai import OpenAI
+from openai import APIStatusError, APITimeoutError, OpenAI
 from tavily import TavilyClient
 
 from agent.classifier import classify
@@ -178,7 +178,13 @@ def run_research(topic: str):
             return
         except Exception as e:
             log.warning("provider %s failed: %s: %s", name, type(e).__name__, e)
-            if (isinstance(e, gerrors.APIError) and e.code in UNAVAILABLE_CODES) or isinstance(e, httpx.TimeoutException):
+            # Gemini raises google-genai errors; Groq, behind the openai SDK, its own.
+            unavailable = (
+                (isinstance(e, gerrors.APIError) and e.code in UNAVAILABLE_CODES)
+                or (isinstance(e, APIStatusError) and e.status_code in UNAVAILABLE_CODES)
+                or isinstance(e, (httpx.TimeoutException, APITimeoutError))
+            )
+            if unavailable:
                 _cooling_until[name] = time.monotonic() + COOLDOWN_SECONDS
             yield {"type": "provider_failed", "provider": name, "error": str(e)}
             last_error = e
@@ -278,12 +284,11 @@ def _run_with_gemini(topic: str, toolset: Toolset, gathered: Gathered, model: st
 
         calls = response.function_calls
         if not calls:
-            markdown = _require_markdown(lambda: response.text, model)
+            markdown = _require_markdown(lambda: response.text, model)  # noqa: B023 — called now, not later
             yield {"type": "done", "result": ResearchResult(topic, markdown, gathered.sources, model)}
             return
 
-        if not response.candidates:
-            raise RuntimeError(f"{model} returned no candidates")
+        # function_calls is read from candidates[0], so a non-empty list implies one.
         contents.append(response.candidates[0].content)
 
         turn = [(call.name, _tool_args(call.args, topic)) for call in calls]
@@ -326,7 +331,7 @@ def _run_with_groq(topic: str, toolset: Toolset, gathered: Gathered):
         choice = response.choices[0].message
 
         if not choice.tool_calls:
-            markdown = _require_markdown(lambda: choice.content, "Groq")
+            markdown = _require_markdown(lambda: choice.content, "Groq")  # noqa: B023 — called now, not later
             yield {"type": "done", "result": ResearchResult(topic, markdown, gathered.sources, "groq")}
             return
 

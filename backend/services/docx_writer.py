@@ -37,8 +37,17 @@ from agent.core import ResearchResult
 from services import document_theme as T
 from services.charts import Chart, chart_from_table, render_png
 from services.document_common import (
-    Block, SectionNumberer, build_references, clean, ends_list, normalise_headings,
-    numeric_columns, parse_inline, parse_markdown, plain_text, strip_citations,
+    Block,
+    SectionNumberer,
+    build_references,
+    clean,
+    ends_list,
+    normalise_headings,
+    numeric_columns,
+    parse_inline,
+    parse_markdown,
+    plain_text,
+    strip_citations,
 )
 
 H1, H2, H3 = "Veritas Heading 1", "Veritas Heading 2", "Veritas Heading 3"
@@ -72,7 +81,7 @@ _AFTER_UPDATE_FIELDS = (
 
 
 def _hex(color: tuple) -> str:
-    return "%02X%02X%02X" % color
+    return "".join(f"{channel:02X}" for channel in color)
 
 
 # --------------------------------------------------------------------------

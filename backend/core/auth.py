@@ -1,9 +1,12 @@
+import logging
 from functools import lru_cache
 
-from fastapi import Header, HTTPException, Depends
-from supabase import create_client, Client
+from fastapi import Depends, Header, HTTPException
+from supabase import Client, create_client
 
-from core.config import get_settings, Settings
+from core.config import Settings, get_settings
+
+log = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -29,7 +32,7 @@ def _resolve_user(authorization: str | None, supabase: Client):
     try:
         result = supabase.auth.get_user(token)
     except Exception as e:
-        print(f"[auth] token verification failed: {e}")
+        log.warning("token verification failed: %s", e)
         return None
     return result.user if result else None
 

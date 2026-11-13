@@ -29,13 +29,16 @@ backend/
   agent/prompts.py      # SYSTEM_PROMPT — the "Veritas AI" persona + brief format
   services/storage.py   # Supabase persistence (projects, sources, waitlist, doc upload)
   services/document_common.py         # markdown → Block parser (shared)
+  services/document_theme.py          # design tokens shared by both writers
   services/{docx,pdf}_writer.py        # Block → .docx / .pdf
   services/charts.py                   # table → bar chart PNG, only when the data is unambiguous
+  services/brief_review.py            # deterministic, report-only quality checks (run in routes)
+  ruff.toml                            # lint config — `python -m ruff check backend`
 frontend/src/
   lib/         api.ts (streamResearch + API_BASE), supabase.ts
-  hooks/       useAuth.ts, useResearchThread.ts
+  hooks/       useAuth.ts, useResearchThread.ts, useApi.ts (one signed-in GET as page state, abort-safe)
   pages/       Home, Projects, ProjectDetail, Sources, Pricing, Profile (plan + delete account)
-  components/  shell/ (Layout, Sidebar, TopBar) · research/ (PromptBox, StreamingProgress, ResultView…) · landing/
+  components/  shell/ (Layout, RequireAuth, Page, Sidebar, TopBar) · research/ (PromptBox, StreamingProgress, ResultView…) · landing/
 ```
 
 ## Setup
@@ -65,7 +68,8 @@ cd frontend && npm install && npm run dev      # localhost:5173
 - **`agent/core.py` imports no FastAPI/Supabase** — keep it that way (CLI/worker-reusable).
 - **SSE events** (`text/event-stream`): `chat_reply · planning · searching · found · limit_reached · provider_failed · save_failed · done · error`.
   - Non-research input → `chat_reply` only, then the stream ends. No `done`, nothing saved.
-  - Research → `planning` (classifier passed), then the provider loop, which ends with `done` = `{project_id, saved, topic, markdown, sources, provider}`.
+  - Research → `planning` (classifier passed), then the provider loop, which ends with `done` = `{project_id, saved, topic, markdown, sources, provider, review}` (`review` = `brief_review` findings, informational).
+- Log with `logging.getLogger(__name__)`, never `print` — uvicorn's log config then applies.
 - **Provider fallback is the design:** any exception → `provider_failed` → next provider, which
   continues from the research already gathered (`Gathered` in `agent/core.py`: one sources list
   and citation numbering for the whole run) instead of starting over. `_require_markdown()` converts an empty/blocked model
@@ -77,17 +81,25 @@ cd frontend && npm install && npm run dev      # localhost:5173
 
 - **Never put padding on `Layout.tsx`'s `<main>`** — it stays `flex-1 overflow-hidden`. That
   flush bottom edge is what lets the chat-view prompt box sit against the bottom
-  (`pt-2 pb-0 sm:pb-1`). Each page owns its own scroll container and padding.
+  (`pt-2 pb-0 sm:pb-1`). Each page owns its own scroll container and padding — non-chat pages
+  start from `shell/Page` (gutter + centred column); `ListPage`/`PageMessage` build on it.
+- **Signed-in routes** (`/projects`, `/projects/:id`, `/sources`, `/profile`) sit under
+  `RequireAuth`, which redirects visitors home. Pages other than Home and `ResultView` are
+  `React.lazy` (the `Suspense` boundary is in `Layout`).
+- **API errors:** every non-2xx goes through `fail()` in `lib/api.ts` (FastAPI `detail` → message).
+  `streamResearch` throws on a non-2xx response, and a stream that closes with no terminal
+  event ends the turn as an error — a turn can never stay `streaming` forever.
 - **Scroll:** anchor a new turn to its *top* —
   `lastTurnRef.scrollIntoView({ behavior:'smooth', block:'start' })`. Never auto-scroll to the bottom.
 - **Home.tsx:** logged-out → `HeroBanner`; logged-in → `WelcomeGreeting` (`font-serif text-2xl italic`). Once a turn exists it swaps to the turn list + bottom prompt bar.
 - `useResearchThread` maps SSE events to `Turn` state; `streamResearch` (`lib/api.ts`) parses the
   `data:` frames.
 - Auth = Supabase browser client (anon key); its JWT rides as `Authorization: Bearer` to the API.
-- Theme tokens (`index.css`): `--color-brand #35b69e`, `--color-ink #1a2b28`.
+- Theme tokens (`index.css`): `--color-brand #35b69e`, `--color-brand-dark #2f9c8a` (hovers + logo),
+  `--color-ink #1a2b28`. Use the tokens, not hex literals.
+- `save_failed` → `Turn.saveError`; Home shows an amber notice above the brief.
 
 ## Known deferred
 
 Backend has intentionally-unfixed items (doc MIME types, per-request Supabase client, sync-def
-SSE concurrency, classifier flakiness, frontend `save_failed` handler). Don't re-flag them as
-new bugs — details in project memory.
+SSE concurrency, classifier flakiness). Don't re-flag them as new bugs — details in project memory.

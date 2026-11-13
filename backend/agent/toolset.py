@@ -20,8 +20,8 @@ from dataclasses import dataclass, field
 
 from tavily import TavilyClient
 
-from agent.tools import make_web_search, WEB_SEARCH_SCHEMA, REF_PLACEHOLDER
-from agent.openalex import make_scholarly_search, SCHOLARLY_SEARCH_SCHEMA
+from agent.openalex import SCHOLARLY_SEARCH_SCHEMA, make_scholarly_search
+from agent.tools import REF_PLACEHOLDER, WEB_SEARCH_SCHEMA, make_web_search
 
 MAX_PARALLEL_SEARCHES = 5
 

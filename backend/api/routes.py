@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,11 +14,20 @@ from services.document_common import document_filename, parse_markdown
 from services.docx_writer import build_docx
 from services.pdf_writer import build_pdf
 from services.storage import (
-    add_to_waitlist, delete_account, delete_project, get_document_url, get_project, list_projects,
-    list_sources, save_document_paths, save_project, upload_document,
+    add_to_waitlist,
+    delete_account,
+    delete_project,
+    get_document_url,
+    get_project,
+    list_projects,
+    list_sources,
+    save_document_paths,
+    save_project,
+    upload_document,
 )
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 
 # Public endpoints take bounded input, so one request can't hand the agent or a
@@ -150,8 +160,8 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                 # of the services layer.
                 findings = review_brief(result.markdown, parse_markdown(result.markdown), result.sources)
                 if findings:
-                    print(f"[review] {len(findings)} finding(s) for {result.topic!r}: "
-                          + "; ".join(f["code"] for f in findings))
+                    log.info("review: %d finding(s) for %r: %s",
+                             len(findings), result.topic, "; ".join(f["code"] for f in findings))
 
                 project_id = None
                 if user:
@@ -168,7 +178,7 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                     except Exception as e:
                         # The project IS saved; download_document() renders any
                         # missing file on first download, so this isn't a failed save.
-                        print(f"[documents] upload failed for project {project_id}: {e}")
+                        log.warning("document upload failed for project %s: %s", project_id, e)
 
                 yield _sse_event({
                     "type": "done",

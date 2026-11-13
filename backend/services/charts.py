@@ -110,7 +110,7 @@ def _wrap(draw, text: str, font, width: int) -> list[str]:
     if len(lines) > MAX_LABEL_LINES:
         lines = lines[:MAX_LABEL_LINES]
         lines[-1] += "…"
-    while draw.textlength(lines[-1], font=font) > width:
+    while len(lines[-1]) > 1 and draw.textlength(lines[-1], font=font) > width:
         lines[-1] = lines[-1][:-2] + "…"
     return lines
 

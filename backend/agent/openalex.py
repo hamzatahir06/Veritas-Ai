@@ -20,11 +20,18 @@ from datetime import date, timedelta
 
 import requests
 
-from core.config import get_settings
 from agent.tools import (
-    RECENCY_DAYS, Recency, LOG_SNIPPET_LIMIT, CONTENT_LIMIT, MIN_RESULTS_BEFORE_WIDENING,
-    REF_PLACEHOLDER, drop_stale_years, pick, top_up,
+    CONTENT_LIMIT,
+    LOG_SNIPPET_LIMIT,
+    MIN_RESULTS_BEFORE_WIDENING,
+    RECENCY_DAYS,
+    REF_PLACEHOLDER,
+    Recency,
+    drop_stale_years,
+    pick,
+    top_up,
 )
+from core.config import get_settings
 
 OPENALEX_URL = "https://api.openalex.org/works"
 MAX_RESULTS = 5

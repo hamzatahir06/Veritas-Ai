@@ -1,0 +1,17 @@
+# Project lint config, so `ruff check backend` gives the same answer on every machine.
+target-version = "py310"
+line-length = 120
+
+[lint]
+select = ["E", "F", "W", "B", "I", "UP", "SIM"]
+ignore = [
+  "E501",  # long lines: prompt prose and comments
+  "B905",  # zip(strict=): every pair here is built to equal length
+]
+
+[lint.flake8-bugbear]
+# FastAPI's dependency injection is a function call in a default argument by design.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header"]
+
+[lint.isort]
+known-first-party = ["agent", "api", "core", "services"]

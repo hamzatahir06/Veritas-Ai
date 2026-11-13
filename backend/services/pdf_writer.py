@@ -34,8 +34,18 @@ from agent.core import ResearchResult
 from services import document_theme as T
 from services.charts import Chart, chart_from_table, render_png
 from services.document_common import (
-    Block, Run, SectionNumberer, build_references, clean, ends_list, normalise_headings,
-    numeric_columns, parse_inline, parse_markdown, plain_text, strip_citations,
+    Block,
+    Run,
+    SectionNumberer,
+    build_references,
+    clean,
+    ends_list,
+    normalise_headings,
+    numeric_columns,
+    parse_inline,
+    parse_markdown,
+    plain_text,
+    strip_citations,
 )
 
 PT_TO_MM = 25.4 / 72
@@ -88,24 +98,24 @@ class BriefPDF(FPDF):
         an unbreakable token near the line end ("44 %", joined by a narrow
         no-break space) got split character by character — "4" / "4 %".
         """
-        with self.text_columns(l_margin=self.l_margin + indent,
-                               line_height=T.LINE / (T.SIZE_BODY * PT_TO_MM)) as columns:
-            with columns.paragraph() as paragraph:
-                for run in runs:
-                    style = base_style
-                    if run.bold and "B" not in style:
-                        style += "B"
-                    if run.italic and "I" not in style:
-                        style += "I"
-                    if run.link:
-                        self.set_text_color(*T.LINK)
-                        self.set_font(T.BODY_FAMILY, style=style + "U", size=T.SIZE_BODY)
-                        paragraph.write(run.text, link=run.link)
-                    else:
-                        self.set_text_color(*color)
-                        self.set_font(T.BODY_FAMILY, style=style,
-                                      size=T.SIZE_BODY * (0.92 if run.code else 1))
-                        paragraph.write(run.text)
+        columns = self.text_columns(l_margin=self.l_margin + indent,
+                                    line_height=T.LINE / (T.SIZE_BODY * PT_TO_MM))
+        with columns, columns.paragraph() as paragraph:
+            for run in runs:
+                style = base_style
+                if run.bold and "B" not in style:
+                    style += "B"
+                if run.italic and "I" not in style:
+                    style += "I"
+                if run.link:
+                    self.set_text_color(*T.LINK)
+                    self.set_font(T.BODY_FAMILY, style=style + "U", size=T.SIZE_BODY)
+                    paragraph.write(run.text, link=run.link)
+                else:
+                    self.set_text_color(*color)
+                    self.set_font(T.BODY_FAMILY, style=style,
+                                  size=T.SIZE_BODY * (0.92 if run.code else 1))
+                    paragraph.write(run.text)
         self.set_x(self.l_margin)
         self.set_text_color(*T.INK)
 

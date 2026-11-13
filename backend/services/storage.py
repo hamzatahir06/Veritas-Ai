@@ -6,6 +6,8 @@ this, so a CLI run or background job can reuse the exact same core loop
 without ever touching a database.
 """
 
+import contextlib
+
 from supabase import Client
 
 from agent.core import ResearchResult
@@ -126,10 +128,8 @@ def _remove_documents(supabase: Client, projects: list[dict]) -> None:
     missing or unreachable object must not block removal of the DB rows."""
     paths = [p for row in projects for p in (row.get("docx_path"), row.get("pdf_path")) if p]
     if paths:
-        try:
+        with contextlib.suppress(Exception):
             supabase.storage.from_("documents").remove(paths)
-        except Exception:
-            pass
 
 
 def add_to_waitlist(supabase: Client, email: str, user_id: str | None = None) -> bool:

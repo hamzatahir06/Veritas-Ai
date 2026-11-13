@@ -171,7 +171,8 @@ def _parse_table_row(line: str) -> list[str]:
 
 
 def _is_table_separator(line: str) -> bool:
-    return all(re.fullmatch(r":?-+:?", c) for c in _parse_table_row(line) if c)
+    cells = [c for c in _parse_table_row(line) if c]
+    return bool(cells) and all(re.fullmatch(r":?-+:?", c) for c in cells)
 
 
 def _heading(line: str, hashes: int) -> Block | None:
