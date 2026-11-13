@@ -1,12 +1,16 @@
+import { lazy } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/shell/Layout'
+import RequireAuth from './components/shell/RequireAuth'
 import Home from './pages/Home'
-import Projects from './pages/Projects'
-import ProjectDetail from './pages/ProjectDetail'
-import Sources from './pages/Sources'
 import { useAuth } from './hooks/useAuth'
-import Pricing from './pages/Pricing'
-import Profile from './pages/Profile'
+
+// Home is the landing page and stays in the main bundle; everything else loads on first visit.
+const Projects = lazy(() => import('./pages/Projects'))
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
+const Sources = lazy(() => import('./pages/Sources'))
+const Pricing = lazy(() => import('./pages/Pricing'))
+const Profile = lazy(() => import('./pages/Profile'))
 
 export default function App() {
   const { isSignedIn, user, accessToken, loading, signInWithGoogle, signOut } = useAuth()
@@ -24,11 +28,13 @@ export default function App() {
           }
         >
           <Route path="/" element={<Home />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/sources" element={<Sources />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/sources" element={<Sources />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

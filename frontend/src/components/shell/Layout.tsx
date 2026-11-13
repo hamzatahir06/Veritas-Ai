@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import PageMessage from './PageMessage'
 import type { User } from '@supabase/supabase-js'
 import type { PageContext } from '../../hooks/usePageContext'
 
@@ -54,7 +55,10 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
         />
         {/* No padding here: pages own their scroll and padding, so Home's prompt bar sits flush with the bottom */}
         <main className="flex-1 overflow-hidden">
-          <Outlet context={{ isSignedIn, accessToken, user } satisfies PageContext} />
+          {/* Pages other than Home are code-split; this is what shows while one loads. */}
+          <Suspense fallback={<PageMessage>Loading…</PageMessage>}>
+            <Outlet context={{ isSignedIn, accessToken, user } satisfies PageContext} />
+          </Suspense>
         </main>
       </div>
     </div>

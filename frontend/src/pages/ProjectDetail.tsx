@@ -1,42 +1,39 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PromptBubble from '../components/research/PromptBubble'
-import ResultView from '../components/research/ResultView'
+import Page from '../components/shell/Page'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
-import { getJson, type DoneEvent } from '../lib/api'
+import { useApi } from '../hooks/useApi'
+import type { Source } from '../lib/api'
+
+// The markdown renderer is the heaviest part of the bundle; load it with the brief.
+const ResultView = lazy(() => import('../components/research/ResultView'))
 
 type ProjectDetailData = {
   id: string
   topic: string
   markdown: string
   provider?: string
-  sources: DoneEvent['sources']
+  sources: Source[]
 }
 
 export default function ProjectDetail() {
-  const { id } = useParams()
+  const { id = '' } = useParams()
   const { accessToken } = usePageContext()
-  const [project, setProject] = useState<ProjectDetailData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!accessToken || !id) return
-    getJson<ProjectDetailData>(`/api/projects/${id}`, accessToken, 'Project not found.')
-      .then(setProject)
-      .catch((err) => setError(err.message))
-  }, [accessToken, id])
+  const { data: project, error, loading } =
+    useApi<ProjectDetailData>(`/api/projects/${id}`, accessToken, 'Project not found.')
 
   if (error) return <PageMessage error>{error}</PageMessage>
-  if (!project) return <PageMessage>Loading…</PageMessage>
+  if (loading || !project) return <PageMessage>Loading…</PageMessage>
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-4xl flex-col gap-4">
-        <Link to="/projects" className="text-sm text-ink/50 hover:text-ink">
-          ← Back to Projects
-        </Link>
-        <PromptBubble topic={project.topic} />
+    <Page className="max-w-4xl gap-4">
+      <Link to="/projects" className="text-sm text-ink/50 hover:text-ink">
+        ← Back to Projects
+      </Link>
+      <PromptBubble topic={project.topic} />
+      <Suspense fallback={null}>
         <ResultView
           result={{
             type: 'done',
@@ -49,7 +46,7 @@ export default function ProjectDetail() {
           }}
           accessToken={accessToken}
         />
-      </div>
-    </div>
+      </Suspense>
+    </Page>
   )
 }

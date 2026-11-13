@@ -1,10 +1,8 @@
 import { useMemo } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { API_BASE, authHeader, jsonHeaders, type DoneEvent } from '../../lib/api'
+import { API_BASE, authHeader, jsonHeaders, type DoneEvent, type Source } from '../../lib/api'
 import { PdfIcon, WordIcon } from './DocumentIcons'
-
-type Source = DoneEvent['sources'][number]
 
 type ResultViewProps = {
   result: DoneEvent
@@ -34,50 +32,47 @@ function linkCitations(md: string, sourceCount: number): string {
 }
 
 export default function ResultView({ result, accessToken }: ResultViewProps) {
-  const uniqueSources: Source[] = Array.from(
-    new Map((result.sources ?? []).map((s) => [s.url, s] as const)).values(),
-  )
-
-  const briefMarkdown = useMemo(
-    () => linkCitations(result.markdown || '', uniqueSources.length),
-    [result.markdown, uniqueSources.length],
-  )
-
-  const markdownComponents: Components = {
-    // Wide tables scroll inside the card instead of stretching it on phones.
-    table: ({ children }) => (
-      <div className="overflow-x-auto">
-        <table>{children}</table>
-      </div>
-    ),
-    a: ({ href, children }) => {
-      if (href?.startsWith(CITE_HREF)) {
-        const source = uniqueSources[Number(href.slice(CITE_HREF.length)) - 1]
+  // Memoised together: the citation rewrite and the link renderer both index
+  // into this list, and ReactMarkdown re-parses whenever either changes.
+  const { uniqueSources, briefMarkdown, markdownComponents } = useMemo(() => {
+    const uniqueSources: Source[] = Array.from(
+      new Map((result.sources ?? []).map((s) => [s.url, s] as const)).values(),
+    )
+    const markdownComponents: Components = {
+      // Wide tables scroll inside the card instead of stretching it on phones.
+      table: ({ children }) => (
+        <div className="overflow-x-auto">
+          <table>{children}</table>
+        </div>
+      ),
+      a: ({ href, children }) => {
+        if (href?.startsWith(CITE_HREF)) {
+          const source = uniqueSources[Number(href.slice(CITE_HREF.length)) - 1]
+          return (
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noreferrer"
+              title={source.title || source.url}
+              className="text-brand-dark no-underline hover:underline"
+            >
+              {children}
+            </a>
+          )
+        }
         return (
-          <a
-            href={source.url}
-            target="_blank"
-            rel="noreferrer"
-            title={source.title || source.url}
-            className="text-brand-dark no-underline hover:underline"
-          >
+          <a href={href} target="_blank" rel="noreferrer">
             {children}
           </a>
         )
-      }
-      return (
-        <a href={href} target="_blank" rel="noreferrer">
-          {children}
-        </a>
-      )
-    },
-  }
-
-  // Only render export buttons for actual research outputs
-  const isResearchBrief = Boolean(
-    uniqueSources.length > 0 ||
-    (result.markdown && (result.markdown.includes('#') || result.markdown.length > 350))
-  )
+      },
+    }
+    return {
+      uniqueSources,
+      briefMarkdown: linkCitations(result.markdown || '', uniqueSources.length),
+      markdownComponents,
+    }
+  }, [result.markdown, result.sources])
 
   const isGuest = !result.project_id || !accessToken
 
@@ -162,68 +157,66 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
         </div>
       )}
 
-      {/* EXPORT SECTION */}
-      {isResearchBrief && (
-        <div className="mt-8 flex flex-col gap-3 border-t border-black/5 pt-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Export Documents</div>
+      {/* EXPORT SECTION — a `done` event is always a brief, so this always shows. */}
+      <div className="mt-8 flex flex-col gap-3 border-t border-black/5 pt-6">
+        <div className="mb-1 text-sm font-semibold text-ink">Export Documents</div>
 
-          {/* Premium PDF Card */}
-          <div className="overflow-hidden rounded-xl border-2 border-[#FA0F00] bg-gradient-to-br from-red-50 to-white px-4 pt-4">
-            <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
-              <div className="flex items-center gap-4">
-                <PdfIcon className="h-12 w-12 shrink-0" />
-                <div>
-                  <div className="font-semibold text-red-900">Adobe PDF</div>
-                  <div className="text-xs font-medium text-red-700/80">Preserves rigid formatting for printing</div>
-                </div>
-              </div>
-              <div className="flex w-full gap-2 sm:w-auto">
-                <button
-                  onClick={() => openDocument('pdf', 'view')}
-                  className="flex-1 cursor-pointer rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition-all hover:border-red-400 hover:bg-red-50 sm:flex-none"
-                >
-                  View
-                </button>
-                <button
-                  onClick={() => openDocument('pdf', 'download')}
-                  className="flex-1 cursor-pointer rounded-lg border border-transparent bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-red-700 hover:shadow sm:flex-none"
-                >
-                  Download
-                </button>
+        {/* Premium PDF Card */}
+        <div className="overflow-hidden rounded-xl border-2 border-[#FA0F00] bg-linear-to-br from-red-50 to-white px-4 pt-4">
+          <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
+            <div className="flex items-center gap-4">
+              <PdfIcon className="h-12 w-12 shrink-0" />
+              <div>
+                <div className="font-semibold text-red-900">Adobe PDF</div>
+                <div className="text-xs font-medium text-red-700/80">Preserves rigid formatting for printing</div>
               </div>
             </div>
-            <div className="-mx-4 h-9 bg-[#FA0F00]" aria-hidden="true" />
-          </div>
-
-          {/* Premium Word Card */}
-          <div className="overflow-hidden rounded-xl border-2 border-[#185ABD] bg-gradient-to-br from-blue-50 to-white px-4 pt-4">
-            <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
-              <div className="flex items-center gap-4">
-                <WordIcon className="h-12 w-12 shrink-0" />
-                <div>
-                  <div className="font-semibold text-blue-900">Microsoft Word</div>
-                  <div className="text-xs font-medium text-blue-700/80">Fully editable document (.docx)</div>
-                </div>
-              </div>
-              <div className="flex w-full gap-2 sm:w-auto">
-                <button
-                  onClick={() => openDocument('docx', 'download')}
-                  className="flex-1 cursor-pointer rounded-lg border border-transparent bg-blue-600 px-8 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow sm:flex-none"
-                >
-                  Download
-                </button>
-              </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <button
+                onClick={() => openDocument('pdf', 'view')}
+                className="flex-1 cursor-pointer rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition-all hover:border-red-400 hover:bg-red-50 sm:flex-none"
+              >
+                View
+              </button>
+              <button
+                onClick={() => openDocument('pdf', 'download')}
+                className="flex-1 cursor-pointer rounded-lg border border-transparent bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-red-700 hover:shadow sm:flex-none"
+              >
+                Download
+              </button>
             </div>
-            <div className="-mx-4 h-9 bg-[#185ABD]" aria-hidden="true" />
           </div>
-
-          <div className="mt-2 text-center text-xs font-medium text-ink/40">
-            {isGuest
-              ? 'Guest session: nothing is saved, so download your documents now'
-              : 'Saved securely to your project archives'}
-          </div>
+          <div className="-mx-4 h-9 bg-[#FA0F00]" aria-hidden="true" />
         </div>
-      )}
+
+        {/* Premium Word Card */}
+        <div className="overflow-hidden rounded-xl border-2 border-[#185ABD] bg-linear-to-br from-blue-50 to-white px-4 pt-4">
+          <div className="flex flex-col items-center justify-between gap-4 pb-4 sm:flex-row">
+            <div className="flex items-center gap-4">
+              <WordIcon className="h-12 w-12 shrink-0" />
+              <div>
+                <div className="font-semibold text-blue-900">Microsoft Word</div>
+                <div className="text-xs font-medium text-blue-700/80">Fully editable document (.docx)</div>
+              </div>
+            </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <button
+                onClick={() => openDocument('docx', 'download')}
+                className="flex-1 cursor-pointer rounded-lg border border-transparent bg-blue-600 px-8 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow sm:flex-none"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+          <div className="-mx-4 h-9 bg-[#185ABD]" aria-hidden="true" />
+        </div>
+
+        <div className="mt-2 text-center text-xs font-medium text-ink/40">
+          {isGuest
+            ? 'Guest session: nothing is saved, so download your documents now'
+            : 'Saved securely to your project archives'}
+        </div>
+      </div>
     </div>
   )
 }

@@ -13,7 +13,7 @@ export default function SuggestedTopics({ onSelect }: SuggestedTopicsProps) {
   return (
     <div className="flex flex-col items-center gap-3">
       <span className="text-xs font-semibold uppercase tracking-wider text-ink/50">
-        Or test the agent with an official research:
+        Or try one of these research topics:
       </span>
       <div className="flex flex-wrap justify-center gap-2.5">
         {PROMPT_SUGGESTIONS.map((topic) => (

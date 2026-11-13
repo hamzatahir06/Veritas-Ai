@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ListPage from '../components/shell/ListPage'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
-import { getJson } from '../lib/api'
+import { useApi } from '../hooks/useApi'
 
 type SourceItem = {
   id: string
@@ -16,21 +15,12 @@ type SourceItem = {
 
 export default function Sources() {
   const { accessToken } = usePageContext()
-  const [sources, setSources] = useState<SourceItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: sources, error, loading } =
+    useApi<SourceItem[]>('/api/sources', accessToken, 'Could not load sources.')
 
-  useEffect(() => {
-    if (!accessToken) return
-    getJson<SourceItem[]>('/api/sources', accessToken, 'Could not load sources.')
-      .then(setSources)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [accessToken])
-
-  if (loading) return <PageMessage>Loading sources…</PageMessage>
   if (error) return <PageMessage error>{error}</PageMessage>
-  if (sources.length === 0) return <PageMessage>No sources yet — start a research on Home.</PageMessage>
+  if (loading || !sources) return <PageMessage>Loading sources…</PageMessage>
+  if (sources.length === 0) return <PageMessage>No sources yet — run a research brief on Home.</PageMessage>
 
   return (
     <ListPage title="Sources">

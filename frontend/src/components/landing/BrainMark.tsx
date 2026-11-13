@@ -1,4 +1,4 @@
-import brainImage from '../../assets/Brain.png'
+import brainImage from '../../assets/Brain.webp'
 
 export default function BrainMark({ className }: { className: string }) {
   return (

@@ -9,11 +9,35 @@ export const jsonHeaders = (accessToken?: string): Record<string, string> => ({
   ...(accessToken ? authHeader(accessToken) : {}),
 })
 
-/** GET a signed-in endpoint's JSON; a non-2xx response throws `errorMessage`. */
-export async function getJson<T>(path: string, accessToken: string, errorMessage: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: authHeader(accessToken) })
-  if (!res.ok) throw new Error(errorMessage)
+/**
+ * Turns a non-2xx response into an Error. FastAPI puts a user-readable message
+ * in `detail` for the errors we raise ("Project not found"); validation errors
+ * carry a list there instead, which is no use to a reader, so `fallback` wins.
+ */
+export async function fail(res: Response, fallback: string): Promise<never> {
+  const detail = (await res.json().catch(() => null))?.detail
+  throw new Error(typeof detail === 'string' ? detail : fallback)
+}
+
+/** A signed-in endpoint's JSON; a non-2xx response throws (see `fail`). */
+export async function getJson<T>(
+  path: string, accessToken: string, fallbackError: string, signal?: AbortSignal,
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeader(accessToken), signal })
+  if (!res.ok) await fail(res, fallbackError)
   return res.json()
+}
+
+export type Source = {
+  query: string
+  title: string
+  url: string
+  snippet: string
+  // Reference metadata the document writers use; absent on older saved rows.
+  authors?: string
+  venue?: string
+  published?: string
+  kind?: string
 }
 
 export type StreamEvent =
@@ -33,7 +57,7 @@ export type StreamEvent =
       saved: boolean
       topic: string
       markdown: string
-      sources: { query: string; title: string; url: string; snippet: string }[]
+      sources: Source[]
       provider: string
     }
 
@@ -47,24 +71,23 @@ export type DoneEvent = Extract<StreamEvent, { type: 'done' }>
 export async function joinWaitlist(
   opts: { email?: string; accessToken?: string },
 ): Promise<{ added: boolean }> {
-  const response = await fetch(`${API_BASE}/api/waitlist`, {
+  const res = await fetch(`${API_BASE}/api/waitlist`, {
     method: 'POST',
     headers: jsonHeaders(opts.accessToken),
     body: JSON.stringify(opts.email ? { email: opts.email } : {}),
   })
-
-  if (!response.ok) throw new Error(`Waitlist request failed (${response.status})`)
-  return response.json()
+  if (!res.ok) await fail(res, 'Could not join the waitlist — please try again.')
+  return res.json()
 }
 
 /** Permanently deletes the signed-in account; `email` must match it (checked server-side too). */
 export async function deleteAccount(email: string, accessToken: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/me`, {
+  const res = await fetch(`${API_BASE}/api/me`, {
     method: 'DELETE',
     headers: jsonHeaders(accessToken),
     body: JSON.stringify({ email }),
   })
-  if (!response.ok) throw new Error('Could not delete your account — please try again.')
+  if (!res.ok) await fail(res, 'Could not delete your account — please try again.')
 }
 
 export async function* streamResearch(
@@ -72,16 +95,18 @@ export async function* streamResearch(
   accessToken?: string,
   signal?: AbortSignal,
 ): AsyncGenerator<StreamEvent> {
-  const response = await fetch(`${API_BASE}/api/research`, {
+  const res = await fetch(`${API_BASE}/api/research`, {
     method: 'POST',
     headers: jsonHeaders(accessToken),
     body: JSON.stringify({ topic }),
     signal,
   })
+  // A rejected request (validation, server error) answers with JSON, not a
+  // stream; without this the reader would find no frames and end silently.
+  if (!res.ok) await fail(res, `Research request failed (${res.status}).`)
+  if (!res.body) throw new Error('No response stream from server.')
 
-  if (!response.body) throw new Error('No response stream from server.')
-
-  const reader = response.body.getReader()
+  const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
 
@@ -90,12 +115,11 @@ export async function* streamResearch(
     if (done) break
     buffer += decoder.decode(value, { stream: true })
 
-    const lines = buffer.split('\n\n')
-    buffer = lines.pop() || ''
+    const frames = buffer.split('\n\n')
+    buffer = frames.pop() || ''
 
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue
-      yield JSON.parse(line.slice(6)) as StreamEvent
+    for (const frame of frames) {
+      if (frame.startsWith('data: ')) yield JSON.parse(frame.slice(6)) as StreamEvent
     }
   }
 }

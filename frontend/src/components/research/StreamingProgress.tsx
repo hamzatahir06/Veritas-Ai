@@ -214,6 +214,14 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
             )
           }
 
+          if (event.type === 'limit_reached') {
+            return (
+              <li key={i} className="pl-3.5 text-sm text-ink">
+                Search budget reached — writing from what was found…
+              </li>
+            )
+          }
+
           return null
         })}
         {!done && <StatusLine key={phase} phase={phase} />}

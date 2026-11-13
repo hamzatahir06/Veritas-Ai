@@ -11,6 +11,8 @@ type Turn = {
   result: DoneEvent | null
   chatReply: string | null
   errorMessage: string | null
+  /** The brief arrived but couldn't be saved to the user's projects (non-fatal). */
+  saveError: string | null
 }
 
 export function useResearchThread() {
@@ -28,23 +30,26 @@ export function useResearchThread() {
 
     setTurns((prev) => [
       ...prev,
-      { id, topic, status: 'streaming', progress: [], result: null, chatReply: null, errorMessage: null },
+      { id, topic, status: 'streaming', progress: [], result: null, chatReply: null, errorMessage: null, saveError: null },
     ])
+
+    // A turn ends on exactly one terminal event; a stream that closes without
+    // one (proxy timeout, server crash mid-run) must still end it.
+    let settled = false
+    const settle = (patch: Partial<Turn>) => {
+      settled = true
+      updateTurn(id, patch)
+    }
 
     try {
       for await (const event of streamResearch(topic, accessToken, controller.signal)) {
-        if (event.type === 'done') {
-          updateTurn(id, { result: event, status: 'done' })
-        } else if (event.type === 'chat_reply') {
-          updateTurn(id, { chatReply: event.message, status: 'chat' })
-        } else if (event.type === 'error') {
-          updateTurn(id, { errorMessage: event.message, status: 'error' })
-        } else {
-          setTurns((prev) =>
-            prev.map((t) => (t.id === id ? { ...t, progress: [...t.progress, event] } : t))
-          )
-        }
+        if (event.type === 'done') settle({ result: event, status: 'done' })
+        else if (event.type === 'chat_reply') settle({ chatReply: event.message, status: 'chat' })
+        else if (event.type === 'error') settle({ errorMessage: event.message, status: 'error' })
+        else if (event.type === 'save_failed') updateTurn(id, { saveError: event.error })
+        else setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, progress: [...t.progress, event] } : t)))
       }
+      if (!settled) settle({ errorMessage: 'The connection closed before the brief arrived.', status: 'error' })
     } catch (err) {
       // A user-triggered abort closes the connection mid-stream — that's not
       // an error, just a cancelled run (nothing gets saved server-side).

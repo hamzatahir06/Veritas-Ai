@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import HeroBanner from '../components/landing/HeroBanner'
 import LandingPromos from '../components/landing/LandingPromos'
@@ -8,10 +8,13 @@ import PromptBubble from '../components/research/PromptBubble'
 import WelcomeGreeting from '../components/research/WelcomeGreeting'
 import SuggestedTopics from '../components/research/SuggestedTopics'
 import StreamingProgress from '../components/research/StreamingProgress'
-import ResultView from '../components/research/ResultView'
 import Footer from '../components/shell/Footer'
 import { usePageContext } from '../hooks/usePageContext'
 import { useResearchThread } from '../hooks/useResearchThread'
+
+// The markdown renderer is the heaviest part of the bundle and only needed
+// once a brief arrives, so a landing visitor never downloads it.
+const ResultView = lazy(() => import('../components/research/ResultView'))
 
 export default function Home() {
   const { isSignedIn, accessToken } = usePageContext()
@@ -123,7 +126,16 @@ export default function Home() {
                       {turn.chatReply}
                     </div>
                   )}
-                  {turn.status === 'done' && turn.result && <ResultView result={turn.result} accessToken={accessToken} />}
+                  {turn.status === 'done' && turn.saveError && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                      This brief couldn't be saved to your projects — download it below to keep it.
+                    </div>
+                  )}
+                  {turn.status === 'done' && turn.result && (
+                    <Suspense fallback={null}>
+                      <ResultView result={turn.result} accessToken={accessToken} />
+                    </Suspense>
+                  )}
                 </div>
               )
             })}

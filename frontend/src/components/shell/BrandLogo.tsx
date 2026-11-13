@@ -2,7 +2,7 @@
 export function LogoMark({ className = 'h-9 w-9' }: { className?: string }) {
   return (
     <svg viewBox="48 38 124 124" className={`shrink-0 ${className}`} aria-hidden="true">
-      <circle cx="110" cy="100" r="62" fill="#2F9C8A" />
+      <circle cx="110" cy="100" r="62" className="fill-brand-dark" />
       <g transform="translate(34.1 25.9) scale(0.30)" fill="none" stroke="#FFFFFF" strokeLinecap="round">
         <circle cx="238" cy="232" r="104" strokeWidth="26" />
         <path d="M196 230 L230 268 L292 196" strokeWidth="26" strokeLinejoin="round" />
@@ -19,7 +19,7 @@ export default function BrandLogo({ onDark = false }: { onDark?: boolean }) {
       <LogoMark />
       <span className="whitespace-nowrap text-xl tracking-tight">
         <span className={`font-semibold ${onDark ? 'text-white' : 'text-ink'}`}>Veritas</span>{' '}
-        <span className="font-normal text-[#2F9C8A]">AI</span>
+        <span className="font-normal text-brand-dark">AI</span>
       </span>
     </span>
   )
