@@ -36,6 +36,16 @@
   -webkit-user-select: none;
 }
 
+/* Home page backdrop: two soft brand glows over a faint dot grid, fading out downwards so
+   the sections below start on a clean surface. Pure CSS, painted once; no image request. */
+.home-backdrop {
+  background:
+    radial-gradient(38rem 20rem at 12% 0%, color-mix(in srgb, var(--color-brand) 24%, transparent), transparent 70%),
+    radial-gradient(34rem 18rem at 92% 12%, color-mix(in srgb, var(--color-brand) 18%, transparent), transparent 70%),
+    radial-gradient(circle, color-mix(in srgb, var(--color-ink) 16%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px;
+  mask-image: linear-gradient(to bottom, black 50%, transparent);
+}
+
 /* A swipeable row (e.g. topic chips on phones) without a visible scrollbar track. */
 @utility no-scrollbar {
   scrollbar-width: none;

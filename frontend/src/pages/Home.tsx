@@ -54,7 +54,13 @@ export default function Home() {
   // --- INITIAL VIEW (Empty State) ---
   if (!hasStarted) {
     return (
-      <div ref={scrollRef} className="flex h-full flex-col overflow-y-auto">
+      // `relative isolate`: the backdrop's -z-10 stays above the shell's background but under the content.
+      <div ref={scrollRef} className="relative isolate flex h-full flex-col overflow-y-auto">
+        {/* Signed in it fills the (otherwise empty) screen; signed out it fades out before the fields band. */}
+        <div
+          aria-hidden="true"
+          className={`home-backdrop pointer-events-none absolute inset-x-0 top-0 -z-10 ${isSignedIn ? 'h-full' : 'h-176'}`}
+        />
         {/* Signed in there is nothing below, so greeting + prompt sit optically centred. */}
         <div
           className={`mx-auto flex w-full max-w-4xl flex-1 flex-col items-center gap-5 px-4 py-6 sm:px-6 ${
