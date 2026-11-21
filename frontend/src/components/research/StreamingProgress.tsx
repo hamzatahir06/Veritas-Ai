@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
 import type { StreamEvent } from '../../lib/api'
+import { domainOf } from '../../lib/url'
 
-/** Host without "www.", e.g. "https://www.nature.com/x" -> "nature.com". */
-function domainOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return url
-  }
+/** Disclosure arrow: points right when closed and turns down when open. */
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden="true"
+      className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+    >
+      <path d="M7.5 4.5 13 10l-5.5 5.5z" />
+    </svg>
+  )
 }
 
 type Row = { event: StreamEvent; index: number; answered?: boolean }
@@ -107,9 +113,9 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
       type="button"
       onClick={() => setShowSteps(!showSteps)}
       aria-expanded={showSteps}
-      className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-ink hover:text-brand-dark"
+      className="flex cursor-pointer items-center gap-1.5 rounded-md text-sm font-medium text-ink transition-colors hover:text-brand-dark"
     >
-      <span className="text-[10px] leading-none">{showSteps ? '▾' : '▸'}</span>
+      <Chevron open={showSteps} />
       {showSteps ? 'Hide research steps' : 'Show research steps'}
     </button>
   )
@@ -122,7 +128,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
   const firstSwitch = events.findIndex((e) => e.type === 'provider_failed')
 
   return (
-    <div className="rounded-2xl border border-black/25 bg-white p-5">
+    <div className="animate-fade-up rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
       <div className="mb-3">
         {stepsToggle || <span className="text-sm font-medium text-ink">Researching</span>}
       </div>
@@ -131,12 +137,12 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
         {rows.map(({ event, index: i, answered }) => {
           if (event.type === 'searching') {
             return (
-              <li key={i} className="flex items-center gap-2 text-sm text-ink">
+              <li key={i} className="flex animate-fade-up items-start gap-2 text-sm text-ink">
                 {/* Pulses only while this search is still running. */}
                 <span
-                  className={`h-1.5 w-1.5 rounded-full bg-brand ${done || answered ? '' : 'animate-pulse'}`}
+                  className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand ${done || answered ? '' : 'animate-pulse'}`}
                 />
-                Searching: {event.query}
+                <span className="min-w-0 wrap-break-word">Searching: {event.query}</span>
               </li>
             )
           }
@@ -159,19 +165,19 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
             const chipClass = 'rounded-md border border-black/25 bg-black/[0.03] px-2 py-1 text-xs'
 
             return (
-              <li key={i} className="pl-3.5">
+              <li key={i} className="animate-fade-up pl-3.5">
                 <button
                   type="button"
                   onClick={() => toggle(i)}
                   aria-expanded={isOpen}
                   className="flex cursor-pointer items-center gap-1 text-sm text-ink transition-colors hover:text-brand-dark"
                 >
-                  <span className="text-[10px] leading-none">{isOpen ? '▾' : '▸'}</span>
+                  <Chevron open={isOpen} />
                   <span className="underline decoration-dotted underline-offset-2">{label}</span>
                 </button>
 
                 {isOpen && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2 flex animate-fade-up flex-wrap gap-1.5">
                     {sources.map((source, j) =>
                       // Chips show the domain only, so the full headline lives
                       // in the tooltip. Once the run is done they are a record,

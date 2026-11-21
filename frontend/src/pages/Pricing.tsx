@@ -42,14 +42,14 @@ function PlanBody({ name, badge, badgeClass, blurb, price, children }: {
         <h2 className="text-xl font-bold text-ink">{name}</h2>
         <span className={badgeClass}>{badge}</span>
       </div>
-      <p className="mt-2 text-xs text-ink/60">{blurb}</p>
+      <p className="mt-2 text-sm text-ink/75">{blurb}</p>
 
       <div className="mt-6 flex items-baseline gap-1">
         <span className="text-4xl font-extrabold text-ink">{price}</span>
         <span className="text-sm font-medium text-ink/50">/ month</span>
       </div>
 
-      <div className="my-6 border-t border-black/5" />
+      <div className="my-6 border-t border-black/10" />
 
       <ul className="space-y-3.5 text-sm text-ink/80">{children}</ul>
     </div>
@@ -85,19 +85,19 @@ export default function Pricing() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-[#fafafa]">
-      <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 text-center">
-        <h1 className="font-serif text-3xl font-bold text-ink sm:text-4xl">
+      <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 text-center sm:px-6 sm:py-12">
+        <h1 className="font-serif text-3xl font-bold text-balance text-ink sm:text-4xl">
           Research deeper. Export faster.
         </h1>
-        <p className="mt-3 text-base text-ink/60 sm:text-lg">
+        <p className="mt-3 text-base text-balance text-ink/75 sm:text-lg">
           Automate your literature reviews and research briefs without sacrificing accuracy.
         </p>
 
         {/* Pricing Cards Container */}
-        <div className="mt-12 grid gap-8 text-left md:grid-cols-2 md:items-stretch">
+        <div className="mt-10 grid gap-8 text-left sm:mt-12 md:grid-cols-2 md:items-stretch">
 
           {/* 1. FREE PLAN */}
-          <div className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-6 shadow-xs sm:p-8">
+          <div className="flex flex-col justify-between rounded-2xl border border-black/15 bg-white p-6 shadow-xs sm:p-8">
             <PlanBody
               name="Free Starter"
               badge="Free Forever"
@@ -173,7 +173,7 @@ export default function Pricing() {
                       onChange={(e) => setEmail(e.target.value)}
                       onBlur={() => setTouched(true)}
                       placeholder="you@example.com"
-                      className="min-w-0 flex-1 rounded-xl border border-black/15 bg-white px-3 py-3 text-sm text-ink outline-none placeholder:text-ink/40 focus:border-brand"
+                      className="min-w-0 flex-1 rounded-xl border border-black/15 bg-white px-3 py-3 text-base text-ink outline-none placeholder:text-ink/50 focus:border-brand sm:text-sm"
                     />
                     <button
                       type="submit"
@@ -211,7 +211,7 @@ export default function Pricing() {
 
         </div>
 
-        <p className="mx-auto mt-8 max-w-2xl text-xs text-ink/40">
+        <p className="mx-auto mt-8 max-w-2xl text-xs leading-relaxed text-ink/60">
           Daily limits reset every 24 hours and reflect real capacity on the search and model
           providers behind each brief. You can run a brief without an account — signing in is what
           saves it and unlocks the downloads. Pro isn't live yet: joining the waitlist is free, takes

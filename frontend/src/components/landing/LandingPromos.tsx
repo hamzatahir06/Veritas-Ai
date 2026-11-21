@@ -171,7 +171,7 @@ function ComparisonCard({
 }) {
   const p = PALETTES[pain ? 'pain' : 'solution']
   return (
-    <div className={`flex flex-col rounded-2xl border-2 p-6 shadow-sm ${p.card}`}>
+    <div className={`flex flex-col rounded-2xl border-2 p-5 shadow-sm sm:p-6 ${p.card}`}>
       <div className={`mb-4 flex items-center gap-2 font-extrabold ${p.heading}`}>
         <h4 className="text-base sm:text-lg">{heading}</h4>
         <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs text-white ${p.badge}`}>
@@ -204,7 +204,7 @@ export default function LandingPromos() {
   const [analyticsRef, analyticsInView] = useInView<HTMLElement>()
 
   return (
-    <div className="mt-12 flex w-full flex-col gap-12 pb-12">
+    <div className="mt-10 flex w-full flex-col gap-10 pb-12 sm:mt-12 sm:gap-12">
 
       {/* ---------------- 1. CREDIBLE SOURCES ---------------- */}
       <div id="sources" className="flex scroll-mt-6 flex-col items-center gap-4 text-center">
@@ -234,9 +234,9 @@ export default function LandingPromos() {
         {/* ---- 2a. TIME-TO-BRIEF ANALYSIS (research-style efficiency panel) ---- */}
         <figure
           ref={analyticsRef}
-          className="mb-2 rounded-2xl border border-black bg-white p-6 shadow-sm sm:p-8"
+          className="mb-2 rounded-2xl border border-black bg-white p-5 shadow-sm sm:p-8"
         >
-          <figcaption className="mb-5 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-ink/50">
+          <figcaption className="mb-5 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-ink/70">
             <span className="h-1.5 w-1.5 rounded-full bg-brand" />
             Time-to-brief analysis
           </figcaption>
@@ -248,7 +248,7 @@ export default function LandingPromos() {
                 <CountUp value={5.7} decimals={1} play={analyticsInView} />
                 <span className="ml-1 text-2xl sm:text-3xl">hrs</span>
               </div>
-              <p className="mt-2 text-sm font-medium text-ink/70">
+              <p className="mt-2 text-sm font-medium text-ink/80">
                 of analyst time saved on a typical 20-source research brief
               </p>
             </div>
@@ -261,25 +261,26 @@ export default function LandingPromos() {
           </div>
 
           {/* Supporting metrics */}
-          <div className="mt-7 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-black bg-black text-center">
+          <div className="mt-7 grid gap-px overflow-hidden rounded-xl border border-black bg-black sm:grid-cols-3 sm:text-center">
             {BRIEF_METRICS.map(([figure, caption]) => (
-              <div key={figure} className="bg-white px-2 py-4 sm:px-3">
-                <div className="font-serif text-xl font-bold tabular-nums text-ink sm:text-2xl">{figure}</div>
-                <div className="mt-1 text-[11px] font-medium leading-tight text-ink/55">{caption}</div>
+              <div key={figure} className="flex items-center gap-4 bg-white px-4 py-3 sm:block sm:px-3 sm:py-4">
+                <div className="w-14 shrink-0 font-serif text-xl font-bold tabular-nums text-ink sm:w-auto sm:text-2xl">{figure}</div>
+                <div className="text-xs font-medium leading-snug text-ink/75 sm:mt-1">{caption}</div>
               </div>
             ))}
           </div>
 
           {/* Methodology — keeps the numbers honest */}
-          <figcaption className="mt-5 text-[11px] leading-relaxed text-ink/45">
-            <strong className="font-semibold text-ink/60">Method.</strong> A typical Veritas brief
+          {/* A <figure> allows one <figcaption> (the heading above), so this is a <p>. */}
+          <p className="mt-5 text-xs leading-relaxed text-ink/65">
+            <strong className="font-semibold text-ink">Method.</strong> A typical Veritas brief
             cites ~20 primary sources. The manual baseline assumes ≈ 15 min of analyst time per
             source to locate it, read the relevant passage and verify the citation, plus ≈ 45 min to
             synthesise a structured, referenced brief — ≈ 5.7 hours. Title-and-abstract screening
             alone averages ~45 seconds per record; full-text appraisal typically runs 10–20 minutes
             per paper (published systematic-review workload studies). Veritas completes the same
             scope in a single run averaging ≈ 3 minutes.
-          </figcaption>
+          </p>
         </figure>
 
         <div className="grid gap-6 sm:grid-cols-2">

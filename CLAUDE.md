@@ -80,9 +80,13 @@ cd frontend && npm install && npm run dev      # localhost:5173
 ## Frontend rules
 
 - **Never put padding on `Layout.tsx`'s `<main>`** — it stays `flex-1 overflow-hidden`. That
-  flush bottom edge is what lets the chat-view prompt box sit against the bottom
-  (`pt-2 pb-0 sm:pb-1`). Each page owns its own scroll container and padding — non-chat pages
+  flush bottom edge is what lets the chat-view prompt bar sit against the bottom
+  (`pt-2 pb-[max(0.375rem,env(safe-area-inset-bottom))]` — the minimum keeps the box's border
+  clear of main's clip; the inset clears the phone home indicator). Each page owns its own scroll container and padding — non-chat pages
   start from `shell/Page` (gutter + centred column); `ListPage`/`PageMessage` build on it.
+- **Responsive shell:** the app is `h-dvh` (never `h-screen` — mobile browser bars). Signed in,
+  the sidebar docks from `lg`; below that it is a drawer opened from the TopBar. Signed out,
+  the TopBar nav links show from `md`. Inputs are `text-base` on phones (iOS zooms below 16px).
 - **Signed-in routes** (`/projects`, `/projects/:id`, `/sources`, `/profile`) sit under
   `RequireAuth`, which redirects visitors home. Pages other than Home and `ResultView` are
   `React.lazy` (the `Suspense` boundary is in `Layout`).

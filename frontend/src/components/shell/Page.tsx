@@ -8,7 +8,7 @@ import type { ReactNode } from 'react'
 export default function Page({ className = 'max-w-4xl', children }: { className?: string; children: ReactNode }) {
   return (
     <div className="h-full overflow-y-auto">
-      <div className={`mx-auto flex w-full flex-col px-4 py-6 ${className}`}>{children}</div>
+      <div className={`mx-auto flex w-full flex-col px-4 py-6 sm:px-6 sm:py-8 ${className}`}>{children}</div>
     </div>
   )
 }

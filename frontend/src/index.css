@@ -4,6 +4,26 @@
   --color-brand: #35b69e;
   --color-brand-dark: #2f9c8a;   /* hover states and the logo mark */
   --color-ink: #1a2b28;
+
+  /* Entrances: new turns / cards rise in; menus pop from their trigger. */
+  --animate-fade-up: fade-up 0.35s ease-out both;
+  --animate-pop-in: pop-in 0.14s ease-out both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  }
+}
+
+/* Keyboard focus ring in the brand color. In the base layer so a utility like
+   `outline-none` (prompt input, form fields with their own focus border) still wins. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
 }
 
 ::selection {
@@ -14,6 +34,12 @@
 .ui-chrome {
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* A swipeable row (e.g. topic chips on phones) without a visible scrollbar track. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
 /* Prompt box border: seven brand-colored patches, evenly spaced, that keep travelling over a
@@ -73,19 +99,44 @@
   .marquee-track > div { flex-wrap: wrap; justify-content: center; padding: 0 1rem; }
   .marquee-track > div[aria-hidden="true"] { display: none; }
   .status-phrase { animation: none; color: var(--color-ink); }
+  .animate-fade-up, .animate-pop-in { animation: none; }
 }
 
-.markdown-content h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
-.markdown-content h2 { font-size: 1.15rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-.markdown-content h3 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
-.markdown-content p { margin-bottom: 0.75rem; line-height: 1.6; }
-.markdown-content ul, .markdown-content ol { padding-left: 1.25rem; margin-bottom: 0.75rem; }
-.markdown-content ul { list-style: disc; }
-.markdown-content ol { list-style: decimal; }
-.markdown-content strong { font-weight: 600; }
-.markdown-content blockquote { border-left: 3px solid var(--color-brand); padding-left: 0.75rem; margin-bottom: 0.75rem; color: rgb(0 0 0 / 0.6); }
-.markdown-content code { font-size: 0.875em; background: rgb(0 0 0 / 0.05); padding: 0.1em 0.3em; border-radius: 0.25rem; }
-.markdown-content hr { border-color: rgb(0 0 0 / 0.1); margin: 1rem 0; }
-.markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
-.markdown-content th { background: rgb(0 0 0 / 0.04); font-weight: 600; }
-.markdown-content th, .markdown-content td { border: 1px solid rgb(0 0 0 / 0.18); padding: 0.4rem 0.6rem; text-align: left; font-size: 0.875rem; }
+/* Brief typography. In the components layer so utilities on rendered elements
+   (e.g. the citation links' `no-underline`) override these defaults. */
+@layer components {
+  .markdown-content { overflow-wrap: break-word; }
+  .markdown-content > :first-child { margin-top: 0; }
+  .markdown-content h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.75rem; }
+  .markdown-content h2 { font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+  .markdown-content h3 { font-size: 1rem; font-weight: 600; margin-top: 1.1rem; margin-bottom: 0.5rem; }
+  .markdown-content h4 { font-size: 0.95rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.4rem; }
+  .markdown-content p { margin-bottom: 0.75rem; line-height: 1.65; }
+  .markdown-content ul, .markdown-content ol { padding-left: 1.25rem; margin-bottom: 0.75rem; }
+  .markdown-content ul { list-style: disc; }
+  .markdown-content ol { list-style: decimal; }
+  .markdown-content li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .markdown-content li > p { margin-bottom: 0.3rem; }
+  .markdown-content li::marker { color: var(--color-brand-dark); }
+  .markdown-content strong { font-weight: 600; }
+  /* Tailwind's reset leaves links looking like body text. */
+  .markdown-content a {
+    color: var(--color-brand-dark);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-brand) 40%, transparent);
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+    transition: text-decoration-color 0.15s;
+  }
+  .markdown-content a:hover { text-decoration-color: var(--color-brand); }
+  .markdown-content blockquote { border-left: 3px solid var(--color-brand); padding-left: 0.75rem; margin-bottom: 0.75rem; color: rgb(0 0 0 / 0.6); }
+  .markdown-content code { font-size: 0.875em; background: rgb(0 0 0 / 0.05); padding: 0.1em 0.3em; border-radius: 0.25rem; }
+  .markdown-content pre { overflow-x: auto; background: rgb(0 0 0 / 0.04); padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.75rem; }
+  .markdown-content pre code { background: none; padding: 0; }
+  .markdown-content hr { border-color: rgb(0 0 0 / 0.1); margin: 1rem 0; }
+  .markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+  /* Headers never wrap, so a narrow screen scrolls the table instead of crushing its columns. */
+  .markdown-content th { background: rgb(0 0 0 / 0.04); font-weight: 600; white-space: nowrap; }
+  .markdown-content th, .markdown-content td { border: 1px solid rgb(0 0 0 / 0.18); padding: 0.4rem 0.6rem; text-align: left; font-size: 0.875rem; }
+  .markdown-content tbody tr:nth-child(even) td { background: rgb(0 0 0 / 0.02); }
+}

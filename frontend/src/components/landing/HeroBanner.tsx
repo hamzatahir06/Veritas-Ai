@@ -2,19 +2,20 @@ import BrainMark from './BrainMark'
 
 export default function HeroBanner() {
   return (
-    <div className="ui-chrome flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-brand px-6 py-6 shadow-sm sm:px-10 sm:py-[36px]">
+    <div className="ui-chrome relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-brand px-5 py-6 shadow-sm sm:px-10 sm:py-[36px]">
+      {/* On phones the brain tucks into the top-right corner, so the copy keeps the full width. */}
       <div className="max-w-md">
-        <p className="mb-2 font-serif text-lg font-medium italic text-white/90">
+        <p className="mb-2 pr-24 font-serif text-lg font-medium italic text-white sm:pr-0">
           Research, done properly.
         </p>
-        <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
+        <h1 className="pr-24 text-2xl font-bold leading-tight text-balance text-white sm:pr-0 sm:text-3xl">
           Deep AI Research Agent
         </h1>
-        <p className="mt-2 text-sm leading-relaxed text-white/90 sm:text-base">
+        <p className="mt-2 text-sm leading-relaxed text-white sm:text-base">
           Give it a topic. It searches official databases, checks primary sources, and hands you a cited brief — in minutes, not hours.
         </p>
       </div>
-      <BrainMark className="h-20 w-auto shrink-0 sm:h-28 md:h-36" />
+      <BrainMark className="absolute top-4 right-4 h-16 w-auto shrink-0 sm:static sm:h-28 md:h-36" />
     </div>
   )
 }

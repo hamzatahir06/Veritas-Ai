@@ -34,7 +34,7 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    <aside className="ui-chrome flex h-full w-60 shrink-0 flex-col justify-between border-r border-black/5 bg-white p-4">
+    <aside className="ui-chrome flex h-full w-full shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-black/10 bg-white p-4 lg:w-60">
       {/* Top Section: Branding & Navigation */}
       <div>
         <div className="mb-8 px-2">

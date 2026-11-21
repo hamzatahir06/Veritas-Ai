@@ -5,7 +5,7 @@ import Page from './Page'
 export default function ListPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Page className="max-w-4xl gap-3">
-      <h1 className="mb-2 text-xl font-semibold text-ink">{title}</h1>
+      <h1 className="mb-2 text-2xl font-semibold tracking-tight text-ink">{title}</h1>
       {children}
     </Page>
   )

@@ -41,9 +41,9 @@ export default function Profile() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Profile</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">Profile</h1>
           <p className="mt-1 truncate text-sm text-ink">{email}</p>
         </div>
 
@@ -84,7 +84,7 @@ export default function Profile() {
             aria-labelledby="delete-title"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.key === 'Escape' && closeConfirm()}
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            className="w-full max-w-md animate-pop-in rounded-2xl bg-white p-5 shadow-xl sm:p-6"
           >
             <h3 id="delete-title" className="text-lg font-semibold text-ink">Delete your account?</h3>
             <p className="mt-2 text-sm text-ink">
@@ -97,7 +97,7 @@ export default function Profile() {
               placeholder={email}
               autoFocus
               autoComplete="off"
-              className="mt-4 w-full rounded-lg border border-black/25 px-3 py-2 text-sm text-ink outline-none focus:border-red-500"
+              className="mt-4 w-full rounded-lg border border-black/25 px-3 py-2 text-base text-ink outline-none focus:border-red-500 sm:text-sm"
             />
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex justify-end gap-3">

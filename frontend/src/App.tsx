@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/shell/Layout'
 import RequireAuth from './components/shell/RequireAuth'
+import Spinner from './components/shell/Spinner'
 import Home from './pages/Home'
 import { useAuth } from './hooks/useAuth'
 
@@ -16,7 +17,12 @@ export default function App() {
   const { isSignedIn, user, accessToken, loading, signInWithGoogle, signOut } = useAuth()
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-ink/40">Loading…</div>
+    return (
+      <div role="status" className="flex min-h-dvh items-center justify-center gap-2.5 text-ink/60">
+        <Spinner />
+        Loading…
+      </div>
+    )
   }
 
   return (

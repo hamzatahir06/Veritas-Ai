@@ -2,7 +2,8 @@
 export default function PromptBubble({ topic }: { topic: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-brand px-4 py-2.5 text-white">
+      {/* wrap-break-word: a pasted URL or long token would otherwise overflow the bubble. */}
+      <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand px-4 py-2.5 wrap-break-word text-white shadow-xs sm:max-w-[75%]">
         {topic}
       </div>
     </div>

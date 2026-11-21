@@ -34,12 +34,13 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
     { label: 'Pricing', to: '/pricing', active: onPricing },
   ]
 
+  // Signed out the nav links fit inline from md; signed in the sidebar only docks from lg.
   const menuButton = (
     <button
       onClick={onToggleMenu}
       aria-label={menuOpen ? 'Close menu' : 'Open menu'}
       aria-expanded={menuOpen}
-      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-ink transition-colors hover:bg-black/5 md:hidden"
+      className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-ink transition-colors hover:bg-black/5 ${isSignedIn ? 'lg:hidden' : 'md:hidden'}`}
     >
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
@@ -48,17 +49,18 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
   )
 
   return (
-    <header className="ui-chrome relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-black/5 bg-white px-4 md:px-6">
+    <header className="ui-chrome relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-black/10 bg-white px-3 sm:px-4 md:px-6">
 
       {/* 1. TOP LEFT: Logo, then nav links (Only when NOT signed in; Sidebar handles nav otherwise) */}
       <div className="flex min-w-0 items-center gap-3 md:gap-10">
         {isSignedIn ? (
-          // Signed in on mobile: the sidebar is a drawer, so the top bar carries the logo
-          // (mark only, leaving room for Contact + Upgrade; the drawer shows the full lockup).
-          <div className="flex items-center gap-2 md:hidden">
+          // Signed in below lg: the sidebar is a drawer, so the top bar carries the logo
+          // (mark only on phones, leaving room for Contact + Upgrade; full lockup from sm).
+          <div className="flex items-center gap-1 lg:hidden">
             {menuButton}
-            <Link to="/" aria-label="Veritas AI home">
-              <LogoMark />
+            <Link to="/" aria-label="Veritas AI home" className="transition-opacity hover:opacity-80">
+              <span className="sm:hidden"><LogoMark /></span>
+              <span className="hidden sm:block"><BrandLogo /></span>
             </Link>
           </div>
         ) : (
@@ -81,7 +83,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
       </div>
 
       {/* 2. TOP RIGHT: Actions */}
-      <div className="flex shrink-0 items-center gap-3 md:gap-6">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-5">
         {isSignedIn ? (
           <>
             <ContactMenu />
@@ -110,7 +112,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
       {!isSignedIn && menuOpen && (
         <>
           <div onClick={onToggleMenu} className="fixed inset-0 top-16 md:hidden" />
-          <nav className="absolute inset-x-0 top-full flex flex-col border-b border-black/5 bg-white px-4 py-2 shadow-lg md:hidden">
+          <nav className="absolute inset-x-0 top-full flex animate-pop-in flex-col border-b border-black/5 bg-white px-4 py-2 shadow-lg md:hidden">
             {navLinks.map(({ label, to, active }) => (
               <Link
                 key={label}

@@ -6,7 +6,7 @@ import { CONTACT_EMAIL, REPO_URL, WHATSAPP_DISPLAY, WHATSAPP_URL, linkTarget } f
 
 type FooterLink = { label: string; to: string; external?: boolean }
 
-const linkClass = 'text-sm text-white/55 transition-colors hover:text-brand'
+const linkClass = 'text-sm text-white/70 transition-colors hover:text-brand'
 const headingClass = 'text-xs font-semibold tracking-[0.14em] text-white uppercase'
 
 function Column({ title, links }: { title: string; links: FooterLink[] }) {
@@ -37,12 +37,12 @@ function ContactRow({ icon, href, children }: { icon: ContactIconName; href: str
     <a
       href={href}
       {...linkTarget(href)}
-      className="group flex items-center gap-3 text-sm text-white/55 transition-colors hover:text-white"
+      className="group flex items-center gap-3 text-sm text-white/70 transition-colors hover:text-white"
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition-colors group-hover:border-brand/60 group-hover:text-brand">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white/80 transition-colors group-hover:border-brand/60 group-hover:text-brand">
         <ContactIcon name={icon} />
       </span>
-      <span className="break-all">{children}</span>
+      <span className="min-w-0 wrap-anywhere">{children}</span>
     </a>
   )
 }
@@ -67,13 +67,13 @@ export default function Footer() {
       {/* Brand-colored hairline across the top edge */}
       <div className="h-px w-full bg-linear-to-r from-transparent via-brand to-transparent" />
 
-      <div className="mx-auto max-w-6xl px-6 pt-14 pb-10">
-        <div className="grid gap-12 md:grid-cols-12">
-          <div className="md:col-span-4">
+      <div className="mx-auto max-w-6xl px-5 pt-12 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-14">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-12">
+          <div className="lg:col-span-4">
             <Link to="/" className="inline-flex">
               <BrandLogo onDark />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/50">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/65">
               Autonomous research briefs from web and peer-reviewed sources — cited at the claim,
               ready to export as PDF or Word.
             </p>
@@ -85,12 +85,12 @@ export default function Footer() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-10 md:col-span-4">
+          <div className="grid grid-cols-2 gap-8 lg:col-span-4">
             <Column title="Product" links={product} />
             <Column title="Resources" links={resources} />
           </div>
 
-          <div className="md:col-span-4">
+          <div className="lg:col-span-4">
             <h3 className={headingClass}>Get in touch</h3>
             <div className="mt-5 space-y-3">
               <ContactRow icon="mail" href={`mailto:${CONTACT_EMAIL}`}>
@@ -106,7 +106,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <p className="mt-14 border-t border-white/10 pt-6 text-xs text-white/40">
+        <p className="mt-12 border-t border-white/15 pt-6 text-xs text-white/55">
           © {new Date().getFullYear()} Veritas AI. All rights reserved.
         </p>
       </div>

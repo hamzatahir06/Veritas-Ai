@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { deleteProject, type ProjectSummary } from '../lib/projects'
 import ProjectCard from '../components/research/ProjectCard'
 import ListPage from '../components/shell/ListPage'
@@ -17,8 +18,12 @@ export default function Projects() {
   }
 
   if (error) return <PageMessage error>{error}</PageMessage>
-  if (loading || !projects) return <PageMessage>Loading projects…</PageMessage>
-  if (projects.length === 0) return <PageMessage>No projects yet — start a topic on Home.</PageMessage>
+  if (loading || !projects) return <PageMessage loading>Loading projects…</PageMessage>
+  if (projects.length === 0) return (
+    <PageMessage>
+      No projects yet — <Link to="/" className="font-medium text-brand-dark underline decoration-brand/40 hover:decoration-brand">start a topic on Home</Link>.
+    </PageMessage>
+  )
 
   return (
     <ListPage title="Projects">

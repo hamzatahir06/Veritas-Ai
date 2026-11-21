@@ -58,9 +58,12 @@ export default function ContactMenu() {
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="cursor-pointer whitespace-nowrap rounded-lg border-2 border-black bg-white px-3 py-1 text-sm font-medium text-ink transition-colors hover:bg-black/5"
+        aria-label="Contact us"
+        className="flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border-2 border-black bg-white px-2 text-sm font-medium text-ink transition-colors hover:bg-black/5 sm:px-3"
       >
-        Contact us
+        {/* Icon-only on phones, so the signed-in bar still fits a 320px screen. */}
+        <ContactIcon name="mail" className="h-4 w-4 sm:hidden" />
+        <span className="hidden sm:inline">Contact us</span>
       </button>
 
       {open && (
@@ -68,7 +71,7 @@ export default function ContactMenu() {
           {/* Click-away layer */}
           <div className="fixed inset-0 z-40" onClick={close} />
           <div
-            className="fixed inset-x-4 top-16 z-50 divide-y divide-black/5 rounded-xl border border-black/10 bg-white p-1 shadow-lg sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80"
+            className="fixed inset-x-4 top-16 z-50 origin-top-right animate-pop-in divide-y divide-black/5 rounded-xl border border-black/10 bg-white p-1 shadow-lg sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80"
           >
             <ContactRow icon="mail" value={CONTACT_EMAIL} href={`mailto:${CONTACT_EMAIL}`} onOpen={close} />
             <ContactRow icon="whatsapp" value={WHATSAPP_DISPLAY} href={WHATSAPP_URL} onOpen={close} />

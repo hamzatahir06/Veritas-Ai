@@ -3,6 +3,7 @@ import ListPage from '../components/shell/ListPage'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
 import { useApi } from '../hooks/useApi'
+import { domainOf } from '../lib/url'
 
 type SourceItem = {
   id: string
@@ -19,26 +20,34 @@ export default function Sources() {
     useApi<SourceItem[]>('/api/sources', accessToken, 'Could not load sources.')
 
   if (error) return <PageMessage error>{error}</PageMessage>
-  if (loading || !sources) return <PageMessage>Loading sources…</PageMessage>
-  if (sources.length === 0) return <PageMessage>No sources yet — run a research brief on Home.</PageMessage>
+  if (loading || !sources) return <PageMessage loading>Loading sources…</PageMessage>
+  if (sources.length === 0) return (
+    <PageMessage>
+      No sources yet — <Link to="/" className="font-medium text-brand-dark underline decoration-brand/40 hover:decoration-brand">run a research brief on Home</Link>.
+    </PageMessage>
+  )
 
   return (
     <ListPage title="Sources">
       {sources.map((s) => (
-        <div key={s.id} className="rounded-xl border border-black/10 bg-white px-5 py-4">
+        <div key={s.id} className="animate-fade-up rounded-xl border border-black/15 bg-white px-4 py-3.5 transition-colors hover:border-brand/50 sm:px-5 sm:py-4">
           <a
             href={s.url}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-brand-dark underline decoration-brand/40 hover:decoration-brand"
+            className="font-medium wrap-anywhere text-brand-dark underline decoration-brand/40 transition-colors hover:decoration-brand"
           >
             {s.title || s.url}
           </a>
-          <div className="mt-1 text-xs text-ink/40">
-            From{' '}
-            <Link to={`/projects/${s.project_id}`} className="underline hover:text-ink/60">
-              {s.projects?.topic}
-            </Link>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-xs text-ink/70">
+            <span>{domainOf(s.url)}</span>
+            <span aria-hidden="true">·</span>
+            <span className="min-w-0">
+              From{' '}
+              <Link to={`/projects/${s.project_id}`} className="underline decoration-ink/30 hover:text-ink">
+                {s.projects?.topic}
+              </Link>
+            </span>
           </div>
         </div>
       ))}

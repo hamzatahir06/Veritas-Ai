@@ -28,19 +28,26 @@ export default function ProjectCard({ project, onDelete }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-black/10 bg-white px-5 py-4 transition-colors hover:border-brand/40">
+    <div className="group flex animate-fade-up items-center gap-3 rounded-xl border border-black/15 bg-white px-4 py-3.5 sm:px-5 sm:py-4 transition-all hover:border-brand/40 hover:shadow-sm">
       <div className="min-w-0 flex-1">
-        <Link to={`/projects/${project.id}`} className="block">
-          <div className="truncate font-medium text-ink">{project.title || project.topic}</div>
-          <div className="mt-1 text-xs text-ink/40">
-            {new Date(project.created_at).toLocaleDateString()}
+        <Link to={`/projects/${project.id}`} className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="line-clamp-2 font-medium wrap-break-word text-ink transition-colors group-hover:text-brand-dark">
+              {project.title || project.topic}
+            </div>
+            <div className="mt-1 text-xs text-ink/70">
+              {new Date(project.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
           </div>
+          <span aria-hidden="true" className="hidden text-ink/50 transition-transform sm:inline group-hover:translate-x-0.5 group-hover:text-brand-dark">
+            →
+          </span>
         </Link>
         {error && <div className="mt-1 text-xs text-red-600">{error}</div>}
       </div>
 
       {confirming ? (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-col items-stretch gap-1.5 sm:flex-row sm:items-center sm:gap-2">
           <button
             type="button"
             onClick={handleDelete}
@@ -53,7 +60,7 @@ export default function ProjectCard({ project, onDelete }: Props) {
             type="button"
             onClick={() => setConfirming(false)}
             disabled={deleting}
-            className={`${buttonClass} font-medium text-ink/60 hover:text-ink`}
+            className={`${buttonClass} font-medium text-ink/80 hover:bg-black/5 hover:text-ink`}
           >
             Cancel
           </button>

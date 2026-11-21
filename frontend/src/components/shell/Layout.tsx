@@ -23,28 +23,33 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
   const closeMenu = () => setMenuOpenAt(null)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#fafafa]">
+    <div className="flex h-dvh overflow-hidden bg-[#fafafa]">
       {isSignedIn && (
         <>
-          <div className="hidden md:flex">
+          {/* Docked from lg: on tablets a fixed 240px column would take a third of the screen. */}
+          <div className="hidden lg:flex">
             <Sidebar />
           </div>
 
-          {/* Mobile: the same sidebar as a slide-in drawer */}
-          <div inert={!menuOpen} className="fixed inset-0 z-40 md:hidden">
+          {/* Phones + tablets: the same sidebar as a slide-in drawer */}
+          <div
+            inert={!menuOpen}
+            onKeyDown={(e) => e.key === 'Escape' && closeMenu()}
+            className="fixed inset-0 z-40 lg:hidden"
+          >
             <div
               onClick={closeMenu}
-              className={`absolute inset-0 bg-black/30 transition-opacity ${menuOpen ? 'opacity-100' : 'opacity-0'}`}
+              className={`absolute inset-0 bg-black/40 transition-opacity ${menuOpen ? 'opacity-100' : 'opacity-0'}`}
             />
             <div
-              className={`relative h-full w-60 shadow-xl transition-transform duration-200 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+              className={`relative h-full w-64 max-w-[85vw] shadow-xl transition-transform duration-200 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
               <Sidebar />
             </div>
           </div>
         </>
       )}
-      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar
           isSignedIn={isSignedIn}
           user={user}
@@ -56,7 +61,7 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
         {/* No padding here: pages own their scroll and padding, so Home's prompt bar sits flush with the bottom */}
         <main className="flex-1 overflow-hidden">
           {/* Pages other than Home are code-split; this is what shows while one loads. */}
-          <Suspense fallback={<PageMessage>Loading…</PageMessage>}>
+          <Suspense fallback={<PageMessage loading>Loading…</PageMessage>}>
             <Outlet context={{ isSignedIn, accessToken, user } satisfies PageContext} />
           </Suspense>
         </main>

@@ -25,11 +25,11 @@ export default function ProjectDetail() {
     useApi<ProjectDetailData>(`/api/projects/${id}`, accessToken, 'Project not found.')
 
   if (error) return <PageMessage error>{error}</PageMessage>
-  if (loading || !project) return <PageMessage>Loading…</PageMessage>
+  if (loading || !project) return <PageMessage loading>Loading…</PageMessage>
 
   return (
     <Page className="max-w-4xl gap-4">
-      <Link to="/projects" className="text-sm text-ink/50 hover:text-ink">
+      <Link to="/projects" className="self-start rounded-md text-sm font-medium text-ink/70 transition-colors hover:text-ink">
         ← Back to Projects
       </Link>
       <PromptBubble topic={project.topic} />
