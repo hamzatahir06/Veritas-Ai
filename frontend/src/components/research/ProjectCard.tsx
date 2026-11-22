@@ -39,7 +39,7 @@ export default function ProjectCard({ project, onDelete }: Props) {
               {new Date(project.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
-          <span aria-hidden="true" className="hidden text-ink/50 transition-transform sm:inline group-hover:translate-x-0.5 group-hover:text-brand-dark">
+          <span aria-hidden="true" className="hidden text-ink/70 transition-transform sm:inline group-hover:translate-x-0.5 group-hover:text-brand-dark">
             →
           </span>
         </Link>

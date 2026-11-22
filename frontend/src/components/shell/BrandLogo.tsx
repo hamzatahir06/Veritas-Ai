@@ -15,11 +15,11 @@ export function LogoMark({ className = 'h-9 w-9' }: { className?: string }) {
 /** Logo lockup (mark + wordmark), shared by the TopBar, Sidebar and Footer. `onDark` for dark backgrounds. */
 export default function BrandLogo({ onDark = false }: { onDark?: boolean }) {
   return (
-    <span className="flex items-center gap-2.5">
+    <span className="flex items-center gap-1.5">
       <LogoMark />
       <span className="whitespace-nowrap text-xl tracking-tight">
         <span className={`font-semibold ${onDark ? 'text-white' : 'text-ink'}`}>Veritas</span>{' '}
-        <span className="font-normal text-brand-dark">AI</span>
+        <span className={`font-normal ${onDark ? 'text-brand' : 'text-brand-dark'}`}>AI</span>
       </span>
     </span>
   )

@@ -11,14 +11,16 @@ const Projects = lazy(() => import('./pages/Projects'))
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
 const Sources = lazy(() => import('./pages/Sources'))
 const Pricing = lazy(() => import('./pages/Pricing'))
+const WhyUs = lazy(() => import('./pages/WhyUs'))
 const Profile = lazy(() => import('./pages/Profile'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 export default function App() {
   const { isSignedIn, user, accessToken, loading, signInWithGoogle, signOut } = useAuth()
 
   if (loading) {
     return (
-      <div role="status" className="flex min-h-dvh items-center justify-center gap-2.5 text-ink/60">
+      <div role="status" className="flex min-h-dvh items-center justify-center gap-2.5 text-ink/70">
         <Spinner />
         Loading…
       </div>
@@ -35,12 +37,14 @@ export default function App() {
         >
           <Route path="/" element={<Home />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/why-us" element={<WhyUs />} />
           <Route element={<RequireAuth />}>
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
             <Route path="/sources" element={<Sources />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

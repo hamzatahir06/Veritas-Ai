@@ -5,6 +5,7 @@ import Page from '../components/shell/Page'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
 import { useApi } from '../hooks/useApi'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import type { Source } from '../lib/api'
 
 // The markdown renderer is the heaviest part of the bundle; load it with the brief.
@@ -23,6 +24,7 @@ export default function ProjectDetail() {
   const { accessToken } = usePageContext()
   const { data: project, error, loading } =
     useApi<ProjectDetailData>(`/api/projects/${id}`, accessToken, 'Project not found.')
+  useDocumentTitle(project?.topic ?? 'Research')
 
   if (error) return <PageMessage error>{error}</PageMessage>
   if (loading || !project) return <PageMessage loading>Loading…</PageMessage>

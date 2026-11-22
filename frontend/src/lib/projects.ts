@@ -1,4 +1,4 @@
-import { API_BASE, authHeader, fail } from './api'
+import { apiFetch, authHeader, fail } from './api'
 
 export type ProjectSummary = {
   id: string
@@ -9,7 +9,7 @@ export type ProjectSummary = {
 }
 
 export async function deleteProject(id: string, accessToken: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/projects/${id}`, {
+  const res = await apiFetch(`/api/projects/${id}`, {
     method: 'DELETE',
     headers: authHeader(accessToken),
   })

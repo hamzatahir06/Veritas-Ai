@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { deleteAccount } from '../lib/api'
+import ConfirmDialog from '../components/shell/ConfirmDialog'
 import { supabase } from '../lib/supabase'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { usePageContext } from '../hooks/usePageContext'
 
 const cardClass = 'rounded-2xl border border-black/25 bg-white p-6 shadow-xs'
 
 export default function Profile() {
+  useDocumentTitle('Profile')
   const { isSignedIn, accessToken, user } = usePageContext()
   const navigate = useNavigate()
   const [confirming, setConfirming] = useState(false)
@@ -76,48 +79,30 @@ export default function Profile() {
         </section>
       </div>
 
-      {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={closeConfirm}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-title"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.key === 'Escape' && closeConfirm()}
-            className="w-full max-w-md animate-pop-in rounded-2xl bg-white p-5 shadow-xl sm:p-6"
-          >
-            <h3 id="delete-title" className="text-lg font-semibold text-ink">Delete your account?</h3>
-            <p className="mt-2 text-sm text-ink">
-              Type <span className="font-semibold text-ink">{email}</span> to confirm.
-            </p>
-            <input
-              type="email"
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              placeholder={email}
-              autoFocus
-              autoComplete="off"
-              className="mt-4 w-full rounded-lg border border-black/25 px-3 py-2 text-base text-ink outline-none focus:border-red-500 sm:text-sm"
-            />
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={closeConfirm}
-                className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/5"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={!matches || deleting}
-                className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {deleting ? 'Deleting…' : 'Delete account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirming}
+        title="Delete your account?"
+        confirmLabel={deleting ? 'Deleting…' : 'Delete account'}
+        cancelLabel="Cancel"
+        confirmDisabled={!matches || deleting}
+        onConfirm={handleDelete}
+        onCancel={closeConfirm}
+      >
+        <label htmlFor="confirm-email">
+          Type <span className="font-semibold">{email}</span> to confirm.
+        </label>
+        <input
+          id="confirm-email"
+          type="email"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && matches && !deleting && handleDelete()}
+          placeholder={email}
+          autoComplete="off"
+          className="mt-3 w-full rounded-lg border border-black/25 px-3 py-2 text-base text-ink outline-none focus:border-red-500 sm:text-sm"
+        />
+        {error && <p role="alert" className="mt-2 text-red-600">{error}</p>}
+      </ConfirmDialog>
     </div>
   )
 }

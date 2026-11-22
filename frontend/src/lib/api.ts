@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 
 /** The Supabase JWT, as the API expects it. */
 export const authHeader = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` })
@@ -8,6 +8,20 @@ export const jsonHeaders = (accessToken?: string): Record<string, string> => ({
   'Content-Type': 'application/json',
   ...(accessToken ? authHeader(accessToken) : {}),
 })
+
+/**
+ * Every call to the backend goes through here. When the server can't be reached at all, the
+ * browser's own error ("Failed to fetch") says nothing useful, so it becomes a readable one;
+ * a user abort is rethrown untouched so callers can still tell "stopped" from "failed".
+ */
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${API_BASE}${path}`, init)
+  } catch (err) {
+    if (init?.signal?.aborted) throw err
+    throw new Error("Can't reach the server. Check your connection and try again.", { cause: err })
+  }
+}
 
 /**
  * Turns a non-2xx response into an Error. FastAPI puts a user-readable message
@@ -23,7 +37,7 @@ export async function fail(res: Response, fallback: string): Promise<never> {
 export async function getJson<T>(
   path: string, accessToken: string, fallbackError: string, signal?: AbortSignal,
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: authHeader(accessToken), signal })
+  const res = await apiFetch(path, { headers: authHeader(accessToken), signal })
   if (!res.ok) await fail(res, fallbackError)
   return res.json()
 }
@@ -71,7 +85,7 @@ export type DoneEvent = Extract<StreamEvent, { type: 'done' }>
 export async function joinWaitlist(
   opts: { email?: string; accessToken?: string },
 ): Promise<{ added: boolean }> {
-  const res = await fetch(`${API_BASE}/api/waitlist`, {
+  const res = await apiFetch('/api/waitlist', {
     method: 'POST',
     headers: jsonHeaders(opts.accessToken),
     body: JSON.stringify(opts.email ? { email: opts.email } : {}),
@@ -82,7 +96,7 @@ export async function joinWaitlist(
 
 /** Permanently deletes the signed-in account; `email` must match it (checked server-side too). */
 export async function deleteAccount(email: string, accessToken: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/me`, {
+  const res = await apiFetch('/api/me', {
     method: 'DELETE',
     headers: jsonHeaders(accessToken),
     body: JSON.stringify({ email }),
@@ -95,7 +109,7 @@ export async function* streamResearch(
   accessToken?: string,
   signal?: AbortSignal,
 ): AsyncGenerator<StreamEvent> {
-  const res = await fetch(`${API_BASE}/api/research`, {
+  const res = await apiFetch('/api/research', {
     method: 'POST',
     headers: jsonHeaders(accessToken),
     body: JSON.stringify({ topic }),
@@ -122,4 +136,7 @@ export async function* streamResearch(
       if (frame.startsWith('data: ')) yield JSON.parse(frame.slice(6)) as StreamEvent
     }
   }
+  // A last frame without its trailing blank line (e.g. a proxy trimmed it) is still an event —
+  // dropping it could lose the `done` and wrongly end the turn as an error.
+  if (buffer.startsWith('data: ')) yield JSON.parse(buffer.slice(6)) as StreamEvent
 }

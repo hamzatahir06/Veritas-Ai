@@ -16,7 +16,7 @@ export default function AccountMenu({ user, onSignOut }: { user: User | null; on
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand/20 text-sm font-semibold text-brand-dark hover:bg-brand/30"
+        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand/25 text-sm font-semibold text-brand ring-1 ring-brand/50 hover:bg-brand/35"
       >
         {initials}
       </button>

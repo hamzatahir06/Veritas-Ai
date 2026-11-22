@@ -35,7 +35,7 @@ backend/
   services/brief_review.py            # deterministic, report-only quality checks (run in routes)
   ruff.toml                            # lint config — `python -m ruff check backend`
 frontend/src/
-  lib/         api.ts (streamResearch + API_BASE), supabase.ts
+  lib/         api.ts (streamResearch + apiFetch: every backend call), supabase.ts
   hooks/       useAuth.ts, useResearchThread.ts, useApi.ts (one signed-in GET as page state, abort-safe)
   pages/       Home, Projects, ProjectDetail, Sources, Pricing, Profile (plan + delete account)
   components/  shell/ (Layout, RequireAuth, Page, Sidebar, TopBar) · research/ (PromptBox, StreamingProgress, ResultView…) · landing/
@@ -58,6 +58,8 @@ cd frontend && npm install && npm run dev      # localhost:5173
 - **`/research` uses `get_optional_user`** — must stay guest-reachable. Every other route
   (`/projects`, `/sources`, `/me`, downloads) uses `get_current_user`, except
   **`POST /documents/{format}`**: public on purpose (guests' PDF/Word), renders in memory, no reads/writes.
+  It is also the signed-in fallback: `ResultView` tries the stored copy first and re-renders here if
+  that fails. `get_current_user`: bad/expired token → 401, Supabase unreachable → 503 (never 401).
 - **One document writer for everyone.** Guests and signed-in users get the same PDF/Word from
   `services/{pdf,docx}_writer.py`; the frontend never builds documents itself. Charts come only
   from `services/charts.py` (strict gate over the brief's own tables) — the model never draws.
@@ -98,6 +100,15 @@ cd frontend && npm install && npm run dev      # localhost:5173
 - **Home.tsx:** logged-out → `HeroBanner`; logged-in → `WelcomeGreeting` (`font-serif text-2xl italic`). Once a turn exists it swaps to the turn list + bottom prompt bar.
 - `useResearchThread` maps SSE events to `Turn` state; `streamResearch` (`lib/api.ts`) parses the
   `data:` frames.
+  **Layout owns the thread** (outlet context `thread`), so a run and its brief survive leaving
+  Home; it is cleared on user change (sign-out). Signed out, any TopBar link into Home (logo, Home,
+  `/#…`) clicked on `/` with a thread open asks first (`shell/ConfirmDialog`), then clears it back to the landing page.
+- `PromptBox` keeps the cursor: focused on mount and when a run ends, and any printable key
+  pressed outside another field is redirected into it (type-anywhere).
+- Layout wraps the routes in `shell/ErrorBoundary` (keyed by path) — a crashed page or a stale
+  lazy chunk shows a Reload message, not a blank app. Unknown paths → `pages/NotFound`.
+- Every page sets its tab title with `useDocumentTitle`. Home's below-hero landing sections are
+  one lazy chunk (`landing/LandingSections`), which also owns the in-page `/#…` scroll (`#sources`). `/why-us` is its own public page.
 - Auth = Supabase browser client (anon key); its JWT rides as `Authorization: Bearer` to the API.
 - Theme tokens (`index.css`): `--color-brand #35b69e`, `--color-brand-dark #2f9c8a` (hovers + logo),
   `--color-ink #1a2b28`. Use the tokens, not hex literals.

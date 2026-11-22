@@ -1,103 +1,92 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import HeroBanner from '../components/landing/HeroBanner'
-import LandingPromos from '../components/landing/LandingPromos'
-import TrustedFields from '../components/landing/TrustedFields'
 import PromptBox from '../components/research/PromptBox'
 import PromptBubble from '../components/research/PromptBubble'
 import WelcomeGreeting from '../components/research/WelcomeGreeting'
 import SuggestedTopics from '../components/research/SuggestedTopics'
 import StreamingProgress from '../components/research/StreamingProgress'
-import Footer from '../components/shell/Footer'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { usePageContext } from '../hooks/usePageContext'
-import { useResearchThread } from '../hooks/useResearchThread'
 
 // The markdown renderer is the heaviest part of the bundle and only needed
 // once a brief arrives, so a landing visitor never downloads it.
 const ResultView = lazy(() => import('../components/research/ResultView'))
+// Below the signed-out hero; signed-in users never download it.
+const LandingSections = lazy(() => import('../components/landing/LandingSections'))
 
 export default function Home() {
-  const { isSignedIn, accessToken } = usePageContext()
-  const { turns, ask, stop, isStreaming } = useResearchThread()
+  const { isSignedIn, accessToken, thread } = usePageContext()
+  const { turns, ask, stop, isStreaming } = thread
+  useDocumentTitle()
   const askTopic = (topic: string) => ask(topic, accessToken)
   const hasStarted = turns.length > 0
   const location = useLocation()
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // "Sources" link (/#sources) scrolls to that section; "Home" link (plain /)
-  // returns the view to the top.
+  // The "Home" link (plain /) returns the view to the top; in-page links (e.g. /#sources)
+  // are scrolled to by LandingSections, which holds those sections.
   useEffect(() => {
-    setTimeout(() => {
-      if (location.hash === '#sources') {
-        document.getElementById('sources')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      } else {
-        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    }, 50)
+    if (!location.hash) scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }, [location])
 
+  // Closing CTA: glide back up to the prompt box and put the cursor in it.
+  const backToPrompt = () => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    document.getElementById('research-topic')?.focus({ preventScroll: true })
+  }
+
+  // A new turn scrolls its top (not the page bottom) into view.
   const lastTurnRef = useRef<HTMLDivElement>(null)
   const lastTurnCountRef = useRef(0)
-
   useEffect(() => {
-    const newTurnAdded = turns.length > lastTurnCountRef.current
-
-    if (newTurnAdded) {
-      setTimeout(() => {
-        lastTurnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 50)
+    if (turns.length > lastTurnCountRef.current) {
+      setTimeout(() => lastTurnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
     }
-
     lastTurnCountRef.current = turns.length
   }, [turns.length])
 
-  // --- INITIAL VIEW (Empty State) ---
+  // Empty state: hero (or greeting), prompt and, signed out, the landing sections.
   if (!hasStarted) {
     return (
       // `relative isolate`: the backdrop's -z-10 stays above the shell's background but under the content.
       <div ref={scrollRef} className="relative isolate flex h-full flex-col overflow-y-auto">
-        {/* Signed in it fills the (otherwise empty) screen; signed out it fades out before the fields band. */}
+        {/* Signed in it fills the (otherwise empty) screen; signed out it fades out below the hero. */}
         <div
           aria-hidden="true"
           className={`home-backdrop pointer-events-none absolute inset-x-0 top-0 -z-10 ${isSignedIn ? 'h-full' : 'h-176'}`}
         />
-        {/* Signed in there is nothing below, so greeting + prompt sit optically centred. */}
+        {/* Greeting/hero + prompt + topics fill exactly one screen, optically centred; signed out,
+            the landing sections start below the fold. */}
         <div
-          className={`mx-auto flex w-full max-w-4xl flex-1 flex-col items-center gap-5 px-4 py-6 sm:px-6 ${
-            isSignedIn ? 'justify-center pb-[12vh]' : ''
+          className={`mx-auto flex min-h-full w-full shrink-0 flex-col items-center justify-center px-4 py-6 sm:px-6 ${
+            isSignedIn ? 'max-w-4xl gap-5 pb-[12vh]' : 'max-w-5xl gap-5'
           }`}
         >
-          {/* Top Hero: Brain Box for logged-out users */}
-          {!isSignedIn ? (
-            <HeroBanner />
-          ) : (
+          {isSignedIn ? (
             <WelcomeGreeting className="text-center font-serif text-2xl font-medium italic text-balance text-black sm:text-3xl" />
+          ) : (
+            <HeroBanner />
           )}
 
-          {/* Type Bar */}
           <div className="w-full">
-            <PromptBox onSubmit={askTopic} onStop={stop} streaming={isStreaming} />
+            <PromptBox onSubmit={askTopic} onStop={stop} streaming={isStreaming} showExamples />
           </div>
 
           <SuggestedTopics onSelect={askTopic} />
         </div>
 
-        {/* Promotional content for signed-out visitors. The fields band sits
-            outside the centred column so it runs edge to edge. */}
+        {/* Promotional content for signed-out visitors. */}
         {!isSignedIn && (
-          <>
-            <TrustedFields />
-            <div className="mx-auto w-full max-w-4xl px-4">
-              <LandingPromos />
-            </div>
-            <Footer />
-          </>
+          <Suspense fallback={null}>
+            <LandingSections onSelect={askTopic} onStart={backToPrompt} />
+          </Suspense>
         )}
       </div>
     )
   }
 
-  // --- ACTIVE CHAT VIEW ---
+  // Chat view: the turns, with the prompt bar pinned to the bottom.
   return (
     <div className="flex h-full flex-col">
       <div className="relative flex-1 overflow-hidden">
@@ -119,11 +108,8 @@ export default function Home() {
                       brief renders, so the sources behind each search are
                       reopenable without scrolling to the bottom of the result. */}
                   {(turn.status === 'streaming' || (turn.status === 'done' && turn.progress.length > 0)) && (
-                      <StreamingProgress
-                        events={turn.progress}
-                        done={turn.status === 'done'}
-                      />
-                    )}
+                    <StreamingProgress events={turn.progress} done={turn.status === 'done'} />
+                  )}
                   {turn.status === 'stopped' && (
                     <div className="animate-fade-up rounded-2xl border border-black/20 bg-black/5 p-4 text-sm text-ink/80">
                       Research stopped — nothing was saved.

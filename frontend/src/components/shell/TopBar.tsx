@@ -1,14 +1,18 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useState, type MouseEvent } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
 import BrandLogo, { LogoMark } from './BrandLogo'
+import ConfirmDialog from './ConfirmDialog'
 import ContactMenu from './ContactMenu'
 import AccountMenu from './AccountMenu'
 
-const underline = (
-  <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-brand shadow-sm" />
-)
-
-const navLinkClass = 'relative pb-1 text-base font-semibold text-ink transition-colors hover:text-black'
+// Desktop nav: soft pills; the current page gets a brand tint instead of an underline.
+const navLinkClass = (active: boolean) =>
+  `rounded-lg px-3 py-2 text-[15px] font-medium transition-colors ${
+    active ? 'bg-brand/20 text-brand' : 'text-white/90 hover:bg-white/10 hover:text-white'
+  }`
+const ctaClass =
+  'cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-black shadow-[0_0_18px_-4px_var(--color-brand)] transition-colors hover:bg-white active:scale-[0.97]'
 
 type TopBarProps = {
   isSignedIn: boolean
@@ -18,21 +22,41 @@ type TopBarProps = {
   /** Mobile only: hamburger state — nav dropdown when signed out, sidebar drawer when signed in. */
   menuOpen: boolean
   onToggleMenu: () => void
+  /** Signed out with a research thread on screen: the logo and Home link ask before clearing it. */
+  hasGuestThread: boolean
+  onLeaveThread: () => void
 }
 
-export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen, onToggleMenu }: TopBarProps) {
-  // The "Sources" link is an in-page scroll target (/#sources), so the active
-  // state is driven by the hash rather than by route matching.
+export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen, onToggleMenu, hasGuestThread, onLeaveThread }: TopBarProps) {
+  // In-page links (/#sources) are scroll targets on Home, so their
+  // active state comes from the hash rather than route matching.
   const location = useLocation()
-  const onSources = location.hash === '#sources'
-  const onHome = location.pathname === '/' && !onSources
-  const onPricing = location.pathname === '/pricing'
-
   const navLinks = [
-    { label: 'Home', to: '/', active: onHome },
-    { label: 'Sources', to: '/#sources', active: onSources },
-    { label: 'Pricing', to: '/pricing', active: onPricing },
-  ]
+    { label: 'Home', to: '/' },
+    { label: 'Sources', to: '/#sources' },
+    { label: 'Pricing', to: '/pricing' },
+    { label: 'Why us', to: '/why-us' },
+  ].map((l) => ({ ...l, active: l.to === location.pathname + location.hash }))
+
+  // Guests' research is never saved, so any link back to the landing page throws it away:
+  // ask first, then go where the link pointed. Off Home (e.g. /pricing) these links just
+  // return to the thread, so no prompt there.
+  const [pendingTo, setPendingTo] = useState<string | null>(null)
+  const navigate = useNavigate()
+  /** Click handler for a link into Home ('/' or '/#…'); other links get none. */
+  const guardHome = (to: string) =>
+    to === '/' || to.startsWith('/#')
+      ? (e: MouseEvent) => {
+          if (!hasGuestThread || location.pathname !== '/') return
+          e.preventDefault()
+          setPendingTo(to)
+        }
+      : undefined
+  const leave = () => {
+    onLeaveThread()
+    navigate(pendingTo ?? '/')
+    setPendingTo(null)
+  }
 
   // Signed out the nav links fit inline from md; signed in the sidebar only docks from lg.
   const menuButton = (
@@ -40,7 +64,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
       onClick={onToggleMenu}
       aria-label={menuOpen ? 'Close menu' : 'Open menu'}
       aria-expanded={menuOpen}
-      className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-ink transition-colors hover:bg-black/5 ${isSignedIn ? 'lg:hidden' : 'md:hidden'}`}
+      className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10 ${isSignedIn ? 'lg:hidden' : 'md:hidden'}`}
     >
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
@@ -49,10 +73,9 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
   )
 
   return (
-    <header className="ui-chrome relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-black/10 bg-white px-3 sm:px-4 md:px-6">
-
-      {/* 1. TOP LEFT: Logo, then nav links (Only when NOT signed in; Sidebar handles nav otherwise) */}
-      <div className="flex min-w-0 items-center gap-3 md:gap-10">
+    <header className="ui-chrome relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-brand/40 bg-black bg-[radial-gradient(ellipse_60%_120%_at_0%_0%,rgb(53_182_158/0.22),transparent_70%)] px-3 sm:px-5 lg:px-8">
+      {/* Left: logo, plus the nav links when signed out (signed in, the sidebar carries nav). */}
+      <div className="flex min-w-0 items-center gap-3 md:gap-8">
         {isSignedIn ? (
           // Signed in below lg: the sidebar is a drawer, so the top bar carries the logo
           // (mark only on phones, leaving room for Contact + Upgrade; full lockup from sm).
@@ -60,36 +83,40 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
             {menuButton}
             <Link to="/" aria-label="Veritas AI home" className="transition-opacity hover:opacity-80">
               <span className="sm:hidden"><LogoMark /></span>
-              <span className="hidden sm:block"><BrandLogo /></span>
+              <span className="hidden sm:block"><BrandLogo onDark /></span>
             </Link>
           </div>
         ) : (
           <>
-            <Link
-              to="/"
-              className="transition-opacity hover:opacity-80"
-            >
-              <BrandLogo />
+            <Link to="/" onClick={guardHome('/')} aria-label="Veritas AI home" className="transition-opacity hover:opacity-80">
+              <BrandLogo onDark />
             </Link>
 
-            {navLinks.map(({ label, to, active }) => (
-              <Link key={label} to={to} className={`hidden md:block ${navLinkClass}`}>
-                {label}
-                {active && underline}
-              </Link>
-            ))}
+            <nav className="hidden items-center gap-1 md:flex">
+              {navLinks.map(({ label, to, active }) => (
+                <Link
+                  key={label}
+                  to={to}
+                  onClick={guardHome(to)}
+                  aria-current={active ? 'page' : undefined}
+                  className={navLinkClass(active)}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
           </>
         )}
       </div>
 
-      {/* 2. TOP RIGHT: Actions */}
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-5">
+      {/* Right: actions */}
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {isSignedIn ? (
           <>
             <ContactMenu />
             <Link
               to="/pricing"
-              className="rounded-lg bg-brand px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
+              className={ctaClass}
             >
               Upgrade
             </Link>
@@ -99,7 +126,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
           <>
             <button
               onClick={onSignIn}
-              className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+              className={ctaClass}
             >
               Sign up
             </button>
@@ -112,13 +139,14 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
       {!isSignedIn && menuOpen && (
         <>
           <div onClick={onToggleMenu} className="fixed inset-0 top-16 md:hidden" />
-          <nav className="absolute inset-x-0 top-full flex animate-pop-in flex-col border-b border-black/5 bg-white px-4 py-2 shadow-lg md:hidden">
+          <nav className="absolute inset-x-0 top-full flex animate-pop-in flex-col gap-0.5 border-b border-brand/40 bg-black px-3 py-2 shadow-lg md:hidden">
             {navLinks.map(({ label, to, active }) => (
               <Link
                 key={label}
                 to={to}
+                onClick={guardHome(to)}
                 className={`rounded-lg px-3 py-3 text-base font-semibold transition-colors ${
-                  active ? 'bg-brand/10 text-brand-dark' : 'text-ink hover:bg-black/5'
+                  active ? 'bg-brand/20 text-brand' : 'text-white hover:bg-white/10'
                 }`}
               >
                 {label}
@@ -127,6 +155,18 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
           </nav>
         </>
       )}
+
+      <ConfirmDialog
+        open={pendingTo !== null}
+        title="Leave this research?"
+        confirmLabel="Leave and clear"
+        onConfirm={leave}
+        onCancel={() => setPendingTo(null)}
+      >
+        Going back to the home page will clear this research and its brief. Guest research isn't
+        saved, so download the brief first if you want to keep it, or sign up to save briefs
+        automatically.
+      </ConfirmDialog>
     </header>
   )
 }

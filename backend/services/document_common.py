@@ -16,6 +16,7 @@ results by build_references(), never trusted to the model.
 """
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -72,7 +73,9 @@ def clean(text: str) -> str:
 
 
 def _slugify(text: str) -> str:
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", text.strip().lower()).strip("-")
+    # Accents fold to their base letter ("Énergie" -> "energie") instead of being dropped.
+    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", ascii_text.strip().lower()).strip("-")
     return slug[:60] or "research-brief"
 
 

@@ -4,7 +4,7 @@ export default function BrainMark({ className }: { className: string }) {
   return (
     <img
       src={brainImage}
-      alt="Research Brain"
+      alt=""
       className={`object-contain scale-140 drop-shadow-md transition-transform ${className}`}
     />
   )

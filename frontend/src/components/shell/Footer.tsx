@@ -54,6 +54,7 @@ export default function Footer() {
     { label: 'Home', to: '/' },
     { label: 'Sources', to: '/#sources' },
     { label: 'Pricing', to: '/pricing' },
+    { label: 'Why us', to: '/why-us' },
   ]
 
   const resources: FooterLink[] = [

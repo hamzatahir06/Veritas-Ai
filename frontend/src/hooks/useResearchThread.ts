@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { streamResearch, type DoneEvent, type StreamEvent } from '../lib/api'
 
 type TurnStatus = 'streaming' | 'done' | 'chat' | 'error' | 'stopped'
@@ -15,6 +15,11 @@ type Turn = {
   saveError: string | null
 }
 
+/**
+ * The research conversation. Layout owns it (handed to pages via the outlet
+ * context), so a run keeps streaming — and its brief stays on screen — while
+ * the user visits another page and comes back.
+ */
 export function useResearchThread() {
   const [turns, setTurns] = useState<Turn[]>([])
   const abortRef = useRef<AbortController | null>(null)
@@ -70,6 +75,23 @@ export function useResearchThread() {
     abortRef.current?.abort()
   }, [])
 
+  /** Clears the thread (stopping any run): on sign-out / user change, or a guest leaving for the landing page. */
+  const reset = useCallback(() => {
+    abortRef.current?.abort()
+    setTurns([])
+  }, [])
+
   const isStreaming = turns.some((t) => t.status === 'streaming')
-  return { turns, ask, stop, isStreaming }
+
+  // Closing or reloading the tab mid-run would silently throw the run away.
+  useEffect(() => {
+    if (!isStreaming) return
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [isStreaming])
+
+  return { turns, ask, stop, reset, isStreaming }
 }
+
+export type ResearchThread = ReturnType<typeof useResearchThread>

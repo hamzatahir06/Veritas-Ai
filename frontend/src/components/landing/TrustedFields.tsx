@@ -1,9 +1,9 @@
+import LucideIcon from '../shell/LucideIcon'
+
 /**
  * The fields Veritas is built for, as two rows of badges gliding in opposite
  * directions. Fields, not company logos: naming organisations that aren't
  * customers would be a claim the page can't back.
- *
- * Icons are Lucide outlines (ISC), inlined as path data.
  */
 type Field = { name: string; icon: string[] }
 
@@ -24,13 +24,18 @@ const ROWS: Field[][] = [
   ],
 ]
 
+/**
+ * Sets of each row in the track. One set (~1,400px for the shorter row) is narrower than a wide
+ * monitor, which left an empty stretch before the loop came round; six sets (~8,400px) cover
+ * any screen. Must stay even: the track slides by half, i.e. exactly SETS / 2 sets.
+ */
+const SETS = 6
+
 function Badge({ field }: { field: Field }) {
   return (
     <span className="group flex shrink-0 items-center gap-2.5 rounded-full border-2 border-white bg-black py-1.5 pl-1.5 pr-4 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-brand hover:bg-brand hover:text-black hover:shadow-[0_6px_20px_-4px_var(--color-brand)]">
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-black transition-colors duration-300 group-hover:bg-black group-hover:text-brand">
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          {field.icon.map((d) => <path key={d} d={d} />)}
-        </svg>
+        <LucideIcon paths={field.icon} className="h-4 w-4" />
       </span>
       {field.name}
     </span>
@@ -42,17 +47,18 @@ export default function TrustedFields() {
     // A full-width band (Home places it outside the centred column). A brand
     // glow rising from the top edge lifts it off the page. shrink-0: in Home's
     // flex column, overflow-hidden would otherwise let it collapse to nothing.
-    <section className="marquee mt-6 flex shrink-0 flex-col gap-3 overflow-hidden border-y-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,_rgb(53_182_158_/_0.28),_transparent_65%)] py-6 text-center shadow-lg">
+    <section className="marquee flex shrink-0 flex-col gap-3 overflow-hidden border-y-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,_rgb(53_182_158_/_0.28),_transparent_65%)] py-6 text-center shadow-lg">
       <h3 className="mb-2 px-4 text-xs font-extrabold uppercase tracking-widest text-white sm:text-sm">
         Built for professionals in <span className="text-brand">critical fields</span>
       </h3>
 
       {ROWS.map((row, r) => (
-        // The track holds the row twice and slides by exactly one copy, so
-        // the loop has no seam. Each copy carries its own trailing gap.
+        // The track holds SETS identical sets and slides by half of them, so the loop has no
+        // seam and no gap at any width. Each set carries its own trailing gap; only the first
+        // is read out (and, with reduced motion, the only one shown).
         <div key={r} className={`marquee-track flex w-max ${r % 2 ? 'marquee-reverse' : ''}`}>
-          {[0, 1].map((copy) => (
-            <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy === 1}>
+          {Array.from({ length: SETS }, (_, copy) => (
+            <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy > 0}>
               {row.map((field) => <Badge key={field.name} field={field} />)}
             </div>
           ))}

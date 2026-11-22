@@ -168,6 +168,7 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                     try:
                         project_id = save_project(supabase, user.id, result)
                     except Exception as e:
+                        log.warning("save failed for user %s: %s", user.id, e)
                         # Non-fatal: the brief still streams to the client below.
                         # Distinct from "error" (a fatal run failure) so the UI
                         # can keep the result and just flag the missed save.
@@ -191,6 +192,7 @@ def research(payload: ResearchRequest, user=Depends(get_optional_user), supabase
                     "review": findings,
                 })
         except Exception as e:
+            log.exception("research stream crashed")
             yield _sse_event({"type": "error", "message": f"Unexpected server error: {e}"})
 
     return StreamingResponse(

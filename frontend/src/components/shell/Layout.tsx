@@ -1,8 +1,10 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import PageMessage from './PageMessage'
+import ErrorBoundary from './ErrorBoundary'
+import { useResearchThread } from '../../hooks/useResearchThread'
 import type { User } from '@supabase/supabase-js'
 import type { PageContext } from '../../hooks/usePageContext'
 
@@ -21,6 +23,13 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
   const menuOpen = menuOpenAt === location.key
   const toggleMenu = () => setMenuOpenAt(menuOpen ? null : location.key)
   const closeMenu = () => setMenuOpenAt(null)
+  // Lives here, above the routes, so leaving Home doesn't drop a run or its brief.
+  const thread = useResearchThread()
+  // ...but one person's briefs must not stay on screen for the next: sign-out
+  // (or account deletion) clears the thread.
+  const { reset } = thread
+  const userId = user?.id
+  useEffect(() => reset(), [userId, reset])
 
   return (
     <div className="flex h-dvh overflow-hidden bg-[#fafafa]">
@@ -57,13 +66,17 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
           onSignOut={onSignOut}
           menuOpen={menuOpen}
           onToggleMenu={toggleMenu}
+          hasGuestThread={!isSignedIn && thread.turns.length > 0}
+          onLeaveThread={reset}
         />
         {/* No padding here: pages own their scroll and padding, so Home's prompt bar sits flush with the bottom */}
         <main className="flex-1 overflow-hidden">
           {/* Pages other than Home are code-split; this is what shows while one loads. */}
-          <Suspense fallback={<PageMessage loading>Loading…</PageMessage>}>
-            <Outlet context={{ isSignedIn, accessToken, user } satisfies PageContext} />
-          </Suspense>
+          <ErrorBoundary key={location.pathname}>
+            <Suspense fallback={<PageMessage loading>Loading…</PageMessage>}>
+              <Outlet context={{ isSignedIn, accessToken, user, thread } satisfies PageContext} />
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ContactIcon, { type ContactIconName } from './ContactIcon'
+import CopyIcon from './CopyIcon'
 import { CONTACT_EMAIL, WHATSAPP_DISPLAY, WHATSAPP_URL, linkTarget } from '../../lib/contact'
 
 /** One channel: icon + value open it (mailto / WhatsApp); the button on the right copies the value. */
@@ -31,18 +32,9 @@ function ContactRow({ icon, value, href, onOpen }: { icon: ContactIconName; valu
         onClick={copy}
         aria-label={copied ? 'Copied' : `Copy ${value}`}
         title={copied ? 'Copied' : 'Copy'}
-        className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-black/5 ${copied ? 'text-brand' : 'text-ink/50 hover:text-ink'}`}
+        className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-black/5 ${copied ? 'text-brand' : 'text-ink/70 hover:text-ink'}`}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4">
-          {copied ? (
-            <path d="M5 12.5l4.5 4.5L19 7.5" />
-          ) : (
-            <>
-              <rect x="9" y="9" width="11" height="11" rx="2" />
-              <path d="M5 15V6a2 2 0 0 1 2-2h8" />
-            </>
-          )}
-        </svg>
+        <CopyIcon copied={copied} />
       </button>
     </div>
   )
@@ -59,7 +51,7 @@ export default function ContactMenu() {
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label="Contact us"
-        className="flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border-2 border-black bg-white px-2 text-sm font-medium text-ink transition-colors hover:bg-black/5 sm:px-3"
+        className="flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border border-white/30 px-2 text-sm font-medium text-white transition-colors hover:border-white/60 hover:bg-white/10 sm:px-3"
       >
         {/* Icon-only on phones, so the signed-in bar still fits a 320px screen. */}
         <ContactIcon name="mail" className="h-4 w-4 sm:hidden" />
@@ -70,9 +62,7 @@ export default function ContactMenu() {
         <>
           {/* Click-away layer */}
           <div className="fixed inset-0 z-40" onClick={close} />
-          <div
-            className="fixed inset-x-4 top-16 z-50 origin-top-right animate-pop-in divide-y divide-black/5 rounded-xl border border-black/10 bg-white p-1 shadow-lg sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80"
-          >
+          <div className="fixed inset-x-4 top-16 z-50 origin-top-right animate-pop-in divide-y divide-black/5 rounded-xl border border-black/10 bg-white p-1 shadow-lg sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80">
             <ContactRow icon="mail" value={CONTACT_EMAIL} href={`mailto:${CONTACT_EMAIL}`} onOpen={close} />
             <ContactRow icon="whatsapp" value={WHATSAPP_DISPLAY} href={WHATSAPP_URL} onOpen={close} />
           </div>

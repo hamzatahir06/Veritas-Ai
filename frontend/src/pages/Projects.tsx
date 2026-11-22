@@ -5,8 +5,10 @@ import ListPage from '../components/shell/ListPage'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
 import { useApi } from '../hooks/useApi'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export default function Projects() {
+  useDocumentTitle('Projects')
   const { accessToken } = usePageContext()
   const { data: projects, error, loading, setData } =
     useApi<ProjectSummary[]>('/api/projects', accessToken, 'Could not load projects.')

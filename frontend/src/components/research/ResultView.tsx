@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { API_BASE, authHeader, jsonHeaders, type DoneEvent, type Source } from '../../lib/api'
+import { apiFetch, authHeader, jsonHeaders, type DoneEvent, type Source } from '../../lib/api'
 import { PdfIcon, WordIcon } from './DocumentIcons'
+import CopyIcon from '../shell/CopyIcon'
 import Spinner from '../shell/Spinner'
 
 type ResultViewProps = {
@@ -158,22 +159,33 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
       showTabMessage(viewerTab, 'Preparing your document…', '#666')
     }
 
+    // Renders the brief already on screen with the same backend writers; needs no DB or Storage.
+    const renderFromBrief = () =>
+      apiFetch(`/api/documents/${format}`, {
+        method: 'POST',
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          topic: result.topic,
+          markdown: result.markdown,
+          sources: result.sources,
+          provider: result.provider,
+        }),
+      })
+
     try {
-      const res = isGuest
-        ? await fetch(`${API_BASE}/api/documents/${format}`, {
-            method: 'POST',
-            headers: jsonHeaders(),
-            body: JSON.stringify({
-              topic: result.topic,
-              markdown: result.markdown,
-              sources: result.sources,
-              provider: result.provider,
-            }),
-          })
-        : await fetch(`${API_BASE}/api/projects/${result.project_id}/download/${format}`, {
+      // Signed in: the stored copy first. If that can't be fetched (Supabase unreachable, sign-in
+      // check failing, file missing), render the identical document from the brief instead, so
+      // a backend hiccup never blocks a download.
+      let res = isGuest
+        ? await renderFromBrief()
+        : await apiFetch(`/api/projects/${result.project_id}/download/${format}`, {
             headers: authHeader(accessToken!),
-          })
-      if (!res.ok) throw new Error(`Document request failed (${res.status})`)
+          }).catch(() => null)
+      if (!res?.ok && !isGuest) {
+        console.warn(`Stored ${format} unavailable (${res?.status ?? 'network'}); rendering from the brief`)
+        res = await renderFromBrief()
+      }
+      if (!res?.ok) throw new Error(`Document request failed (${res?.status})`)
 
       const blob = await res.blob()
       if (viewerTab) {
@@ -223,26 +235,15 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
             copied ? 'border-brand/40 bg-brand/10 text-brand-dark' : 'border-black/20 text-ink/80 hover:bg-black/5 hover:text-ink'
           }`}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-3.5 w-3.5">
-            {copied ? (
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            ) : (
-              <>
-                <rect x="9" y="9" width="11" height="11" rx="2" />
-                <path d="M5 15V6a2 2 0 0 1 2-2h8" />
-              </>
-            )}
-          </svg>
+          <CopyIcon copied={copied} className="h-3.5 w-3.5" />
           {copied ? 'Copied' : 'Copy brief'}
         </button>
       </div>
 
-      {/* Brief Body */}
       <div className="markdown-content text-ink">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{briefMarkdown}</ReactMarkdown>
       </div>
 
-      {/* Sources & Citations */}
       {uniqueSources.length > 0 && (
         <div className="mt-8 border-t border-black/10 pt-6">
           <div className="mb-3 text-sm font-semibold text-ink">Sources & Citations</div>
@@ -264,7 +265,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
         </div>
       )}
 
-      {/* EXPORT SECTION — a `done` event is always a brief, so this always shows. */}
+      {/* Exports: a `done` event is always a brief, so this always shows. */}
       <div className="mt-8 flex flex-col gap-3 border-t border-black/5 pt-6">
         <div className="mb-1 text-sm font-semibold text-ink">Export Documents</div>
 

@@ -23,6 +23,7 @@ Tools return (text_for_model, source_rows) and never raise: a failed search
 is reported to the model as unavailable so the rest of the run continues.
 """
 
+import logging
 import re
 from collections.abc import Container
 from datetime import date
@@ -30,6 +31,8 @@ from typing import Literal
 from urllib.parse import urlparse
 
 from tavily import TavilyClient
+
+log = logging.getLogger(__name__)
 
 Recency = Literal["day", "week", "month", "year"]
 Category = Literal["general", "news", "finance"]
@@ -346,6 +349,7 @@ def make_web_search(tavily_client: TavilyClient, topic: str, seen: Container[str
         try:
             ranked = _ranked(query, recency, category, domains, domains)
         except Exception as e:
+            log.warning("web search failed for %r: %s: %s", query, type(e).__name__, e)
             return f"Web search unavailable for this query ({e}).", []
 
         widened = False

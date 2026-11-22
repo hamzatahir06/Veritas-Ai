@@ -3,6 +3,7 @@ import ListPage from '../components/shell/ListPage'
 import PageMessage from '../components/shell/PageMessage'
 import { usePageContext } from '../hooks/usePageContext'
 import { useApi } from '../hooks/useApi'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { domainOf } from '../lib/url'
 
 type SourceItem = {
@@ -15,6 +16,7 @@ type SourceItem = {
 }
 
 export default function Sources() {
+  useDocumentTitle('Sources')
   const { accessToken } = usePageContext()
   const { data: sources, error, loading } =
     useApi<SourceItem[]>('/api/sources', accessToken, 'Could not load sources.')

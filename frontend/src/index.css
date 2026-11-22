@@ -40,10 +40,105 @@
    the sections below start on a clean surface. Pure CSS, painted once; no image request. */
 .home-backdrop {
   background:
-    radial-gradient(38rem 20rem at 12% 0%, color-mix(in srgb, var(--color-brand) 24%, transparent), transparent 70%),
-    radial-gradient(34rem 18rem at 92% 12%, color-mix(in srgb, var(--color-brand) 18%, transparent), transparent 70%),
-    radial-gradient(circle, color-mix(in srgb, var(--color-ink) 16%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px;
-  mask-image: linear-gradient(to bottom, black 50%, transparent);
+    radial-gradient(42rem 24rem at 10% 0%, color-mix(in srgb, var(--color-brand) 40%, transparent), transparent 70%),
+    radial-gradient(38rem 22rem at 94% 10%, color-mix(in srgb, var(--color-brand) 32%, transparent), transparent 70%),
+    radial-gradient(30rem 16rem at 50% 70%, color-mix(in srgb, var(--color-brand) 14%, transparent), transparent 70%),
+    radial-gradient(circle, color-mix(in srgb, var(--color-ink) 18%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px;
+  mask-image: linear-gradient(to bottom, black 55%, transparent);
+}
+
+/* Closing CTA band (dark): brand glows in opposite corners. */
+.cta-glow {
+  background:
+    radial-gradient(28rem 14rem at 15% 0%, color-mix(in srgb, var(--color-brand) 45%, transparent), transparent 70%),
+    radial-gradient(26rem 14rem at 90% 100%, color-mix(in srgb, var(--color-brand) 35%, transparent), transparent 70%);
+}
+
+/* Dark analytics panel: faint 32px grid lines fading out from the top-right glow. */
+.tech-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at 80% 0%, black 20%, transparent 75%);
+}
+
+/* Moving diagonal stripes on a chart bar (the slow, manual option). */
+.bar-stripes {
+  background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.18) 0 6px, transparent 6px 12px);
+  background-size: 17px 17px;
+  animation: bar-stripes 1.2s linear infinite;
+}
+@keyframes bar-stripes {
+  to { background-position: 17px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-stripes { animation: none; }
+}
+
+/* Scroll reveal, CSS-only: a section rises in as it enters the scroller's view. Browsers
+   without scroll-driven animations (and reduced-motion users) simply show it in place. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(28px); }
+}
+
+/* LiveDemo: the active step's time-left bar fills once per step (duration set inline). */
+.demo-progress { animation: demo-progress linear both; }
+@keyframes demo-progress {
+  from { transform: scaleX(0); }
+}
+
+/* LiveDemo's mock window: near-black with a soft brand glow behind it, a brand light that keeps
+   circling the border, and a blinking caret on the "thinking" line. */
+@property --demo-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.demo-window {
+  --phrase-base: var(--color-zinc-200);
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 70% 55% at 100% 0%, color-mix(in srgb, var(--color-brand) 16%, transparent), transparent 70%),
+    #0b0f0e;
+  box-shadow: 0 24px 60px -24px color-mix(in srgb, var(--color-brand) 55%, transparent), 0 10px 30px -12px rgb(0 0 0 / 0.5);
+}
+.demo-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--demo-angle), transparent 0 72%, var(--color-brand) 88%, transparent 100%);
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+  animation: demo-orbit 6s linear infinite;
+}
+@keyframes demo-orbit {
+  to { --demo-angle: 360deg; }
+}
+.demo-caret {
+  width: 2px;
+  height: 1em;
+  background: var(--color-brand);
+  animation: demo-blink 1s steps(1) infinite;
+}
+@keyframes demo-blink {
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-window::after, .demo-caret { animation: none; }
 }
 
 /* A swipeable row (e.g. topic chips on phones) without a visible scrollbar track. */
@@ -68,7 +163,7 @@
    sweeping across the text so the line never looks frozen between phrase changes. */
 .status-phrase {
   display: inline-block;
-  background: linear-gradient(90deg, var(--color-ink) 40%, var(--color-brand) 50%, var(--color-ink) 60%);
+  background: linear-gradient(90deg, var(--phrase-base, var(--color-ink)) 40%, var(--color-brand) 50%, var(--phrase-base, var(--color-ink)) 60%);
   background-size: 250% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -87,12 +182,13 @@
 
 /* Home-page field badges: each row slides left by one of its two copies, forever. The second
    row runs the other way, and hovering anywhere on the strip pauses both so a badge can be read. */
+/* Durations are for half the track (3 sets, see TrustedFields SETS), i.e. ~50px/s. */
 .marquee-track {
-  animation: marquee-run 38s linear infinite;
+  animation: marquee-run 114s linear infinite;
 }
 .marquee-reverse {
   animation-direction: reverse;
-  animation-duration: 44s;
+  animation-duration: 132s;
 }
 .marquee:hover .marquee-track {
   animation-play-state: paused;

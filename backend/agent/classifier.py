@@ -8,6 +8,7 @@ either confirms the message is genuine research (proceed to run_research),
 or returns a short conversational reply directly, skipping the loop.
 """
 
+import logging
 import re
 
 from google import genai
@@ -16,11 +17,13 @@ from openai import OpenAI
 
 from core.config import GROQ_BASE_URL, get_settings
 
+log = logging.getLogger(__name__)
+
 CLASSIFY_PROMPT = """You are Veritas AI, an advanced research assistant created to assist users with research so they can save precious time.
 
 IDENTITY RULES:
 - Always identify yourself as "Veritas AI".
-- Never mention Meta, Google, OpenAI, Groq, Gemini, Llama, or any underlying model, owner, or developer.
+- Never mention Meta, Google, OpenAI, Groq, Gemini etc. or any underlying model, owner, or developer.
 - If asked who created, developed, or made you, must respond with: "I am Veritas AI, developed to assist you with your research so you can save your precious time."
 
 TASK:
@@ -67,8 +70,9 @@ def classify(topic: str) -> tuple[bool, str]:
                 timeout=10,
             )
             text = _clean_response(response.choices[0].message.content)
-        except Exception:
-            text = ""  # Reset and proceed to Gemini fallback
+        except Exception as e:
+            log.warning("classifier: Groq failed, trying Gemini: %s: %s", type(e).__name__, e)
+            text = ""
 
     # --- Step 2: Fallback to Gemini Flash-Lite — spares the research models' daily quota ---
     if not text and settings.gemini_api_key:
@@ -82,11 +86,15 @@ def classify(topic: str) -> tuple[bool, str]:
                 contents=prompt,
             )
             text = _clean_response(response.text)
-        except Exception:
+        except Exception as e:
+            log.warning("classifier: Gemini failed: %s: %s", type(e).__name__, e)
             text = ""
 
     # --- Step 3: Safety Guardrail ---
     # If both classifiers fail, default to research so a real request is never dropped.
-    if not text or _RESEARCH_VERDICT.fullmatch(text):
+    if not text:
+        log.warning("classifier: no verdict from any model; treating %r as research", topic[:80])
+        return True, ""
+    if _RESEARCH_VERDICT.fullmatch(text):
         return True, ""
     return False, text

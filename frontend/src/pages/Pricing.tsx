@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { joinWaitlist } from '../lib/api'
 import Footer from '../components/shell/Footer'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { usePageContext } from '../hooks/usePageContext'
 
 /** Real-time "looks like an email" check; the server (pydantic EmailStr) is authoritative. */
@@ -13,12 +14,12 @@ type Phase = 'idle' | 'form' | 'submitting' | 'done'
 /** One feature row. `soon` marks a line that is planned but not shipped yet. */
 function Feature({ children, soon = false }: { children: ReactNode; soon?: boolean }) {
   return (
-    <li className={`flex items-start gap-3 ${soon ? 'text-ink/45' : ''}`}>
-      <span className={`font-bold ${soon ? 'text-ink/25' : 'text-brand'}`}>✓</span>
+    <li className={`flex items-start gap-3 ${soon ? 'text-ink/70' : ''}`}>
+      <span className={`font-bold ${soon ? 'text-ink/60' : 'text-brand'}`}>✓</span>
       <span>
         {children}
         {soon && (
-          <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-ink/50 uppercase">
+          <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-ink/70 uppercase">
             Coming soon
           </span>
         )}
@@ -46,7 +47,7 @@ function PlanBody({ name, badge, badgeClass, blurb, price, children }: {
 
       <div className="mt-6 flex items-baseline gap-1">
         <span className="text-4xl font-extrabold text-ink">{price}</span>
-        <span className="text-sm font-medium text-ink/50">/ month</span>
+        <span className="text-sm font-medium text-ink/70">/ month</span>
       </div>
 
       <div className="my-6 border-t border-black/10" />
@@ -57,6 +58,7 @@ function PlanBody({ name, badge, badgeClass, blurb, price, children }: {
 }
 
 export default function Pricing() {
+  useDocumentTitle('Pricing')
   const { isSignedIn, accessToken, user } = usePageContext()
   const [phase, setPhase] = useState<Phase>('idle')
   const [email, setEmail] = useState('')
@@ -93,10 +95,8 @@ export default function Pricing() {
           Automate your literature reviews and research briefs without sacrificing accuracy.
         </p>
 
-        {/* Pricing Cards Container */}
         <div className="mt-10 grid gap-8 text-left sm:mt-12 md:grid-cols-2 md:items-stretch">
-
-          {/* 1. FREE PLAN */}
+          {/* Free */}
           <div className="flex flex-col justify-between rounded-2xl border border-black/15 bg-white p-6 shadow-xs sm:p-8">
             <PlanBody
               name="Free Starter"
@@ -122,9 +122,8 @@ export default function Pricing() {
             </Link>
           </div>
 
-          {/* 2. PRO PLAN ($9/mo) */}
+          {/* Pro ($9/mo) */}
           <div className="relative flex flex-col justify-between rounded-2xl border-2 border-brand bg-white p-6 shadow-md sm:p-8">
-            {/* Highlight Badge */}
             <div className="absolute -top-3.5 right-6 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
               Most Popular
             </div>
@@ -168,17 +167,18 @@ export default function Pricing() {
                   <div className="flex gap-2">
                     <input
                       type="email"
+                      aria-label="Your email for the Pro waitlist"
                       autoFocus
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onBlur={() => setTouched(true)}
                       placeholder="you@example.com"
-                      className="min-w-0 flex-1 rounded-xl border border-black/15 bg-white px-3 py-3 text-base text-ink outline-none placeholder:text-ink/50 focus:border-brand sm:text-sm"
+                      className="min-w-0 flex-1 rounded-xl border border-black/15 bg-white px-3 py-3 text-base text-ink outline-none placeholder:text-ink/60 focus:border-brand sm:text-sm"
                     />
                     <button
                       type="submit"
                       disabled={!emailValid || phase === 'submitting'}
-                      className="shrink-0 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition-colors cursor-pointer hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+                      className="shrink-0 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white cursor-pointer transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {phase === 'submitting' ? 'Joining…' : 'Join'}
                     </button>
@@ -186,7 +186,7 @@ export default function Pricing() {
                   {touched && email && !emailValid && (
                     <p className="text-xs font-medium text-red-600">Enter a valid email address.</p>
                   )}
-                  <p className="text-xs text-ink/50">
+                  <p className="text-xs text-ink/70">
                     Pro sign-in uses Google — use an email you can sign in to Google with.
                   </p>
                   {error && <p className="text-xs font-medium text-red-600">{error}</p>}
@@ -196,22 +196,21 @@ export default function Pricing() {
                   <button
                     onClick={handleWaitlist}
                     disabled={phase === 'submitting'}
-                    className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition-colors cursor-pointer hover:bg-brand-dark disabled:opacity-60"
+                    className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white cursor-pointer transition-colors hover:bg-brand-dark disabled:opacity-60"
                   >
                     {phase === 'submitting' ? 'Joining…' : 'Join Pro Waitlist ($9/mo)'}
                   </button>
                   {isSignedIn && user?.email && (
-                    <p className="mt-2 text-center text-xs text-ink/50">Joins as {user.email}</p>
+                    <p className="mt-2 text-center text-xs text-ink/70">Joins as {user.email}</p>
                   )}
                   {error && <p className="mt-2 text-xs font-medium text-red-600">{error}</p>}
                 </>
               )}
             </div>
           </div>
-
         </div>
 
-        <p className="mx-auto mt-8 max-w-2xl text-xs leading-relaxed text-ink/60">
+        <p className="mx-auto mt-8 max-w-2xl text-xs leading-relaxed text-ink/70">
           Daily limits reset every 24 hours and reflect real capacity on the search and model
           providers behind each brief. You can run a brief without an account — signing in is what
           saves it and unlocks the downloads. Pro isn't live yet: joining the waitlist is free, takes

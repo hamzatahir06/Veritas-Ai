@@ -13,6 +13,7 @@ result rather than raising — this is a supplementary source and must not take
 down an otherwise-fine run.
 """
 
+import logging
 import math
 import re
 from collections.abc import Container
@@ -32,6 +33,8 @@ from agent.tools import (
     top_up,
 )
 from core.config import get_settings
+
+log = logging.getLogger(__name__)
 
 OPENALEX_URL = "https://api.openalex.org/works"
 MAX_RESULTS = 5
@@ -182,6 +185,7 @@ def make_scholarly_search(topic: str, seen: Container[str] = ()):
         try:
             works = _best(query, recency)
         except Exception as e:
+            log.warning("scholarly search failed for %r: %s: %s", query, type(e).__name__, e)
             # Supplementary source — never break the run over it.
             return f"Scholarly search unavailable for this query ({e}).", []
 

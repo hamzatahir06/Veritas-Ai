@@ -1,36 +1,77 @@
 import { useState, useRef, useEffect } from 'react'
+import { prefersReducedMotion } from '../../hooks/useInView'
+
+const PLACEHOLDER = 'What would you like to research?'
+const EXAMPLES = [
+  'How does the EU AI Act classify high-risk systems?',
+  'Evidence on GLP-1 drugs and heart health',
+  'State of solid-state battery manufacturing',
+  'What do meta-analyses say about remote work productivity?',
+]
+
+/**
+ * Types each example out, holds it, erases it, moves on — while `enabled`.
+ * Returns null when off, so the caller falls back to the plain placeholder.
+ */
+function useTypewriter(enabled: boolean): string | null {
+  const [t, setT] = useState({ i: 0, len: 0, erasing: false })
+  const on = enabled && !prefersReducedMotion()
+
+  useEffect(() => {
+    if (!on) return
+    const full = EXAMPLES[t.i]
+    const delay = t.erasing ? 22 : t.len === full.length ? 1900 : 48
+    const id = setTimeout(() => setT(({ i, len, erasing }) => {
+      if (!erasing) return len < full.length ? { i, len: len + 1, erasing } : { i, len, erasing: true }
+      return len > 0 ? { i, len: len - 1, erasing } : { i: (i + 1) % EXAMPLES.length, len: 0, erasing: false }
+    }), delay)
+    return () => clearTimeout(id)
+  }, [on, t])
+
+  return on ? `Try: ${EXAMPLES[t.i].slice(0, t.len)}` : null
+}
 
 type PromptBoxProps = {
   onSubmit: (topic: string) => void
   onStop: () => void
   /** A research run is in progress: input is locked and the button becomes "Stop Research". */
   streaming: boolean
+  /** Landing view: the empty box types out example questions as its placeholder. */
+  showExamples?: boolean
 }
 
-export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProps) {
+export default function PromptBox({ onSubmit, onStop, streaming, showExamples = false }: PromptBoxProps) {
   const [topic, setTopic] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const typed = useTypewriter(showExamples && !streaming && topic === '')
 
-  // Auto-focus on mount and whenever research finishes (streaming goes true → false)
+  // The input is disabled while a run streams; hand focus back the moment it ends.
   useEffect(() => {
-    if (!streaming) {
-      inputRef.current?.focus()
-    }
+    if (!streaming) inputRef.current?.focus({ preventScroll: true })
   }, [streaming])
+
+  // Type anywhere: a printable key pressed outside another field lands in this box, so the
+  // user never has to click into it first. Space is left alone (it presses focused buttons).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const input = inputRef.current
+      if (!input || input.disabled || e.key.length !== 1 || e.key === ' ' || e.ctrlKey || e.metaKey || e.altKey) return
+      const el = document.activeElement
+      if (el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return
+      input.focus({ preventScroll: true })  // the keystroke itself then types into the box
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   const handleSubmit = () => {
     if (!topic.trim() || streaming) return
     onSubmit(topic)
     setTopic('')
-
-    // Retain focus right after submit
-    requestAnimationFrame(() => {
-      inputRef.current?.focus()
-    })
   }
 
   return (
-    <div className="group relative flex items-center gap-3 rounded-2xl bg-white py-2.5 pr-2.5 pl-4 sm:px-4 sm:py-3 shadow-sm">
+    <div className="group relative flex items-center gap-3 rounded-2xl bg-white py-2.5 pr-2.5 pl-4 shadow-sm sm:px-4 sm:py-3">
       {/* Border: faded track + brand patches running around it (animation in index.css) */}
       <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
         <rect width="100%" height="100%" rx="16" fill="none" strokeWidth="2" className="stroke-brand/30 transition-colors group-focus-within:stroke-brand/55" />
@@ -51,15 +92,13 @@ export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProp
         autoFocus
         value={topic}
         onChange={(e) => setTopic(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-            handleSubmit()
-          }
-        }}
-        placeholder="What would you like to research?"
+        onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && handleSubmit()}
+        id="research-topic"
+        aria-label={PLACEHOLDER}
+        placeholder={typed ?? PLACEHOLDER}
         maxLength={2000}  // matches MAX_TOPIC in backend/api/routes.py
         disabled={streaming}
-        className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink/40 disabled:opacity-50 caret-brand"
+        className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink/60 disabled:opacity-50 caret-brand"
       />
       {streaming ? (
         <button
@@ -77,7 +116,7 @@ export default function PromptBox({ onSubmit, onStop, streaming }: PromptBoxProp
           aria-label="Start Research"
           className="ui-chrome flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-brand px-3 py-2.5 sm:px-4 sm:py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark active:scale-95"
         >
-          {/* Solid paper plane (Font Awesome Free, CC BY 4.0) — matches the "Final'e UI" mockup */}
+          {/* Solid paper plane (Font Awesome Free, CC BY 4.0) */}
           <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true" className="h-4 w-4 shrink-0">
             <path d="M498.1 5.6c10.1 7 15.4 19.1 13.5 31.2l-64 416c-1.5 9.7-7.4 18.2-16 23s-18.9 5.4-28 1.6L284 427.7l-68.5 74.1c-8.9 9.7-22.9 12.9-35.2 8.1S160 493.2 160 480V396.4c0-4 1.5-7.8 4.2-10.7L331.8 202.8c5.8-6.3 5.6-16-.4-22s-15.7-6.4-22-.7L106 360.8 17.7 316.6C7.1 311.3 .3 300.7 0 288.9s5.9-22.8 16.1-28.7l448-256c10.7-6.1 23.9-5.5 34 1.4z" />
           </svg>
