@@ -22,6 +22,7 @@ SQL editor. They're guarded with `IF NOT EXISTS`, so a re-run is harmless.
 | Migration | What it does |
 | --------- | ------------ |
 | `0001_sources_reference_metadata.sql` | Adds `authors`, `venue`, `published`, `kind` to `sources` so re-downloaded briefs keep their full IEEE references |
+| `0002_sources_position.sql` | Adds `position` (citation number) to `sources` so a saved brief's [n] links to the right source |
 
 ## Shape
 

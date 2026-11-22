@@ -28,7 +28,7 @@ That decision-making — not the API call — is the actual engineering problem 
 |---|---|
 | 🔎 **Autonomous multi-search loop** | The agent plans its own queries and judges when it has enough — calibrated so trivial questions get one search and broad topics get several, never the reverse |
 | 🎓 **Web + scholarly search** | Two tools the agent picks between per query: Tavily for the live web, OpenAlex for peer-reviewed literature — so a science question gets papers, not just blog posts |
-| 🛡️ **Dual-provider resilience** | Gemini 3.5 Flash primary, Groq (`gpt-oss-120b`) fallback — a rate limit, an outage, or a deprecated model on one provider falls through to the other automatically, mid-run |
+| 🛡️ **Multi-model resilience** | Four Gemini Flash models (newest first), then Groq (`gpt-oss-120b`) — a rate limit, an outage, or a deprecated model falls through to the next automatically, mid-run, continuing from the research already gathered |
 | 🏛️ **Source authority ranking** | Results are weighted by domain trust (official / government / academic > major outlets > social / forums) *and* relevance score — done deterministically in code, not left to chance |
 | 📡 **Live streaming, not a spinner** | Every search the agent runs streams to the screen in real time over SSE — you watch it think, not wait on a black box |
 | 📄 **Real, cited output** | Every finished brief exports as a properly formatted **.docx** and **.pdf** — real headings, tables, bold text, and a hyperlinked source list built from actual search results, never invented |
@@ -197,15 +197,15 @@ veritas-ai/
 │   └── services/       # docx/pdf generation, Supabase persistence
 └── frontend/
     └── src/
-        ├── components/  # landing, research, shell, ui
-        ├── hooks/        # useAuth, useResearchThread
-        ├── lib/          # api client (SSE reader), Supabase client
-        └── pages/        # Home, Projects, ProjectDetail, Sources
+        ├── components/  # landing, research, shell
+        ├── hooks/        # useAuth, useResearchThread, useApi, useDocumentTitle, useInView, usePageContext
+        ├── lib/          # api client (apiFetch + SSE reader), Supabase client
+        └── pages/        # Home, Projects, ProjectDetail, Sources, Pricing, WhyUs, Profile, NotFound
 ```
 
 ## 🗺️ Roadmap
 
-- [ ] Elite Plan — priced tier beyond the current waitlist
+- [ ] Pro plan — paid tier (currently a waitlist)
 - [ ] Settings page (intentionally out of scope for v1)
 - [ ] Configurable search depth per request
 

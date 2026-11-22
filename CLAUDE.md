@@ -37,7 +37,7 @@ backend/
 frontend/src/
   lib/         api.ts (streamResearch + apiFetch: every backend call), supabase.ts
   hooks/       useAuth.ts, useResearchThread.ts, useApi.ts (one signed-in GET as page state, abort-safe)
-  pages/       Home, Projects, ProjectDetail, Sources, Pricing, Profile (plan + delete account)
+  pages/       Home, Projects, ProjectDetail, Sources, Pricing, WhyUs (/why-us), Profile (plan + delete account), NotFound
   components/  shell/ (Layout, RequireAuth, Page, Sidebar, TopBar) · research/ (PromptBox, StreamingProgress, ResultView…) · landing/
 ```
 
