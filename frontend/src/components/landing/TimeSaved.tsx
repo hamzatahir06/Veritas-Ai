@@ -65,9 +65,9 @@ function TimeBar({ label, valueLabel, minutes, slow = false, play }: {
         <span className={`font-semibold ${slow ? 'text-rose-300' : 'text-brand'}`}>{label}</span>
         <span className="font-bold tabular-nums text-white">{valueLabel}</span>
       </div>
-      <div className="relative h-9 rounded-lg bg-white/[0.06] ring-1 ring-white/10 ring-inset">
+      <div className="relative h-9 rounded-lg bg-white/6 ring-1 ring-white/10 ring-inset">
         <div
-          className={`absolute inset-y-1 left-1 rounded-md transition-[width] duration-[1300ms] ease-out motion-reduce:transition-none ${
+          className={`absolute inset-y-1 left-1 rounded-md transition-[width] duration-1300 ease-out motion-reduce:transition-none ${
             slow
               ? 'bg-linear-to-r from-rose-600 to-red-500 shadow-[0_0_24px_-4px_rgb(244_63_94/0.7)]'
               : 'min-w-3 bg-linear-to-r from-brand-dark to-brand shadow-[0_0_20px_2px_var(--color-brand)]'
@@ -143,7 +143,7 @@ export default function TimeSaved() {
             {BRIEF_METRICS.map(([value, prefix, suffix, caption]) => (
               <div
                 key={caption}
-                className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/[0.05] p-4 backdrop-blur-sm"
+                className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm"
               >
                 <span aria-hidden="true" className="absolute inset-x-4 top-0 h-px bg-linear-to-r from-transparent via-brand to-transparent" />
                 <div className="text-3xl font-extrabold tracking-tight tabular-nums text-white">

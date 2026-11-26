@@ -33,7 +33,6 @@
 
 .ui-chrome {
   user-select: none;
-  -webkit-user-select: none;
 }
 
 /* Home page backdrop: two soft brand glows over a faint dot grid, fading out downwards so
@@ -165,7 +164,6 @@
   display: inline-block;
   background: linear-gradient(90deg, var(--phrase-base, var(--color-ink)) 40%, var(--color-brand) 50%, var(--phrase-base, var(--color-ink)) 60%);
   background-size: 250% 100%;
-  -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: status-in 0.35s ease-out, status-sheen 2.2s linear infinite;

@@ -57,7 +57,7 @@ export default function BriefAnatomy() {
 
       <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
         {/* The sample brief: a sheet of paper on a dark stage. */}
-        <div className="rounded-2xl bg-ink bg-[radial-gradient(ellipse_80%_60%_at_0%_0%,rgb(53_182_158/0.3),transparent_70%)] p-3 shadow-[0_24px_60px_-28px_var(--color-ink)] sm:p-6">
+        <div className="rounded-2xl bg-ink bg-[radial-gradient(ellipse_80%_60%_at_0%_0%,color-mix(in_srgb,var(--color-brand)_30%,transparent),transparent_70%)] p-3 shadow-[0_24px_60px_-28px_var(--color-ink)] sm:p-6">
           <div className="mb-3 flex items-center justify-between px-1 text-[11px] font-semibold text-white/80">
             <span>brief.pdf</span>
             <span>Illustrative sample</span>

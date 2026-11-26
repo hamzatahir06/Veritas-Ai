@@ -162,7 +162,7 @@ export default function StreamingProgress({ events, done = false }: StreamingPro
 
             const isOpen = openRows.has(i)
             // The chip look is shared; only a live run makes them real links.
-            const chipClass = 'rounded-md border border-black/25 bg-black/[0.03] px-2 py-1 text-xs'
+            const chipClass = 'rounded-md border border-black/25 bg-black/3 px-2 py-1 text-xs'
 
             return (
               <li key={i} className="animate-fade-up pl-3.5">

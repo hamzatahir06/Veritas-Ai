@@ -108,7 +108,7 @@ export default function UseCases({ onSelect }: { onSelect: (topic: string) => vo
               type="button"
               onClick={() => onSelect(q)}
               style={{ animationDelay: `${i * 70}ms` }}
-              className="group flex animate-fade-up cursor-pointer flex-col justify-between gap-4 rounded-xl border border-black/20 bg-[#fafafa] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-brand hover:bg-white hover:shadow-md"
+              className="group flex animate-fade-up cursor-pointer flex-col justify-between gap-4 rounded-xl border border-black/20 bg-neutral-50 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-brand hover:bg-white hover:shadow-md"
             >
               <span className="text-sm font-semibold leading-snug text-ink">{q}</span>
               <span className="flex items-center gap-1.5 text-xs font-bold text-brand-dark">

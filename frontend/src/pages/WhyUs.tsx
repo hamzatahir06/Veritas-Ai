@@ -76,7 +76,7 @@ export default function WhyUs() {
   const { isSignedIn } = usePageContext()
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-[#fafafa]">
+    <div className="flex h-full flex-col overflow-y-auto">
       <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="font-serif text-3xl font-bold text-balance text-ink sm:text-4xl">Why switch to Veritas AI</h1>

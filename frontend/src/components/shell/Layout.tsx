@@ -32,7 +32,7 @@ export default function Layout({ isSignedIn, user, accessToken, onSignIn, onSign
   useEffect(() => reset(), [userId, reset])
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[#fafafa]">
+    <div className="flex h-dvh overflow-hidden bg-neutral-50">
       {isSignedIn && (
         <>
           {/* Docked from lg: on tablets a fixed 240px column would take a third of the screen. */}

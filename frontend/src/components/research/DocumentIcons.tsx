@@ -1,6 +1,6 @@
 export function PdfIcon({ className }: { className: string }) {
   return (
-    <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 48 48" className={className}>
       <rect x="10" y="4" width="26" height="34" rx="4" fill="#ffffff" stroke="#fca5a5" strokeWidth="1.5" />
       <path d="M30 4 L36 10 L30 10 Z" fill="#fecaca" />
       <rect x="4" y="10" width="26" height="34" rx="4" fill="#dc2626" />
@@ -15,7 +15,7 @@ export function PdfIcon({ className }: { className: string }) {
 
 export function WordIcon({ className }: { className: string }) {
   return (
-    <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 48 48" className={className}>
       <rect x="14" y="4" width="26" height="34" rx="4" fill="#ffffff" stroke="#93c5fd" strokeWidth="1.5" />
       <path d="M34 4 L40 10 L34 10 Z" fill="#bfdbfe" />
       <rect x="20" y="16" width="14" height="2" rx="1" fill="#93c5fd" />

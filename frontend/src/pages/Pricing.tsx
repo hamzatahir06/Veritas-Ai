@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { joinWaitlist } from '../lib/api'
 import Footer from '../components/shell/Footer'
@@ -86,7 +85,7 @@ export default function Pricing() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-[#fafafa]">
+    <div className="flex h-full flex-col overflow-y-auto">
       <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 text-center sm:px-6 sm:py-12">
         <h1 className="font-serif text-3xl font-bold text-balance text-ink sm:text-4xl">
           Research deeper. Export faster.

@@ -47,7 +47,7 @@ export default function TrustedFields() {
     // A full-width band (Home places it outside the centred column). A brand
     // glow rising from the top edge lifts it off the page. shrink-0: in Home's
     // flex column, overflow-hidden would otherwise let it collapse to nothing.
-    <section className="marquee flex shrink-0 flex-col gap-3 overflow-hidden border-y-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,_rgb(53_182_158_/_0.28),_transparent_65%)] py-6 text-center shadow-lg">
+    <section className="marquee flex shrink-0 flex-col gap-3 overflow-hidden border-y-2 border-brand bg-black bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--color-brand)_28%,transparent),transparent_65%)] py-6 text-center shadow-lg">
       <h3 className="mb-2 px-4 text-xs font-extrabold uppercase tracking-widest text-white sm:text-sm">
         Built for professionals in <span className="text-brand">critical fields</span>
       </h3>

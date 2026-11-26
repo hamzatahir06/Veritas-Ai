@@ -5,6 +5,7 @@ import BrandLogo, { LogoMark } from './BrandLogo'
 import ConfirmDialog from './ConfirmDialog'
 import ContactMenu from './ContactMenu'
 import AccountMenu from './AccountMenu'
+import { SITE_LINKS } from '../../lib/siteLinks'
 
 // Desktop nav: soft pills; the current page gets a brand tint instead of an underline.
 const navLinkClass = (active: boolean) =>
@@ -31,12 +32,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
   // In-page links (/#sources) are scroll targets on Home, so their
   // active state comes from the hash rather than route matching.
   const location = useLocation()
-  const navLinks = [
-    { label: 'Home', to: '/' },
-    { label: 'Sources', to: '/#sources' },
-    { label: 'Pricing', to: '/pricing' },
-    { label: 'Why us', to: '/why-us' },
-  ].map((l) => ({ ...l, active: l.to === location.pathname + location.hash }))
+  const navLinks = SITE_LINKS.map((l) => ({ ...l, active: l.to === location.pathname + location.hash }))
 
   // Guests' research is never saved, so any link back to the landing page throws it away:
   // ask first, then go where the link pointed. Off Home (e.g. /pricing) these links just
@@ -73,7 +69,7 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
   )
 
   return (
-    <header className="ui-chrome relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-brand/40 bg-black bg-[radial-gradient(ellipse_60%_120%_at_0%_0%,rgb(53_182_158/0.22),transparent_70%)] px-3 sm:px-5 lg:px-8">
+    <header className="ui-chrome relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-brand/40 bg-black bg-[radial-gradient(ellipse_60%_120%_at_0%_0%,color-mix(in_srgb,var(--color-brand)_22%,transparent),transparent_70%)] px-3 sm:px-5 lg:px-8">
       {/* Left: logo, plus the nav links when signed out (signed in, the sidebar carries nav). */}
       <div className="flex min-w-0 items-center gap-3 md:gap-8">
         {isSignedIn ? (
@@ -114,20 +110,14 @@ export default function TopBar({ isSignedIn, user, onSignIn, onSignOut, menuOpen
         {isSignedIn ? (
           <>
             <ContactMenu />
-            <Link
-              to="/pricing"
-              className={ctaClass}
-            >
+            <Link to="/pricing" className={ctaClass}>
               Upgrade
             </Link>
             <AccountMenu user={user} onSignOut={onSignOut} />
           </>
         ) : (
           <>
-            <button
-              onClick={onSignIn}
-              className={ctaClass}
-            >
+            <button onClick={onSignIn} className={ctaClass}>
               Sign up
             </button>
             {menuButton}

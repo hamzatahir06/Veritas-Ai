@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import BrandLogo from './BrandLogo'
 import ContactIcon, { type ContactIconName } from './ContactIcon'
 import { CONTACT_EMAIL, REPO_URL, WHATSAPP_DISPLAY, WHATSAPP_URL, linkTarget } from '../../lib/contact'
+import { SITE_LINKS } from '../../lib/siteLinks'
 
 type FooterLink = { label: string; to: string; external?: boolean }
 
@@ -49,14 +50,6 @@ function ContactRow({ icon, href, children }: { icon: ContactIconName; href: str
 
 /** Site-wide footer for the scrollable (non-chat) pages. */
 export default function Footer() {
-  // Signed-out only, so Sources is the landing-page section rather than the /sources page.
-  const product: FooterLink[] = [
-    { label: 'Home', to: '/' },
-    { label: 'Sources', to: '/#sources' },
-    { label: 'Pricing', to: '/pricing' },
-    { label: 'Why us', to: '/why-us' },
-  ]
-
   const resources: FooterLink[] = [
     { label: 'GitHub', to: REPO_URL, external: true },
     { label: 'Report an issue', to: `${REPO_URL}/issues`, external: true },
@@ -87,7 +80,7 @@ export default function Footer() {
           </div>
 
           <div className="grid grid-cols-2 gap-8 lg:col-span-4">
-            <Column title="Product" links={product} />
+            <Column title="Product" links={SITE_LINKS} />
             <Column title="Resources" links={resources} />
           </div>
 

@@ -51,7 +51,7 @@ const STEPS: { title: string; blurb: string; panel: ReactNode }[] = [
           <span className="demo-caret" aria-hidden="true" />
         </div>
         {/* What the classifier gate decides before any search runs (backend/agent/classifier.py). */}
-        <div className="mt-auto flex animate-fade-up flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-sm text-zinc-300" style={{ animationDelay: '500ms' }}>
+        <div className="mt-auto flex animate-fade-up flex-col gap-2 rounded-xl border border-white/10 bg-white/4 p-3 text-sm text-zinc-300" style={{ animationDelay: '500ms' }}>
           <div className="flex items-center gap-2"><span className="font-bold text-brand">✓</span> Research question detected — not small talk</div>
           <div className="flex items-center gap-2"><span className="font-bold text-brand">✓</span> Scope: EV supply chains, current developments</div>
         </div>
@@ -212,7 +212,7 @@ export default function LiveDemo() {
 
         {/* Mock app window — first on phones, so the run is visible before the step list. */}
         <div className="demo-window order-first overflow-hidden rounded-2xl border border-white/10 lg:order-none">
-          <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.04] px-4 py-2.5">
+          <div className="flex items-center gap-2 border-b border-white/10 bg-white/4 px-4 py-2.5">
             <span className="flex gap-1.5" aria-hidden="true">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
