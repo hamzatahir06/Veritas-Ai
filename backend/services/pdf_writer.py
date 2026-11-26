@@ -148,7 +148,7 @@ def _title_page(pdf: BriefPDF, result: ResearchResult, today: date):
     pdf.text_block(f"{T.AUTHOR}  ·  {today:%d %B %Y}", size=T.SIZE_CAPTION, color=T.MUTED)
 
 
-def _render_toc(pdf: FPDF, outline):
+def _render_toc(pdf: BriefPDF, outline):
     pdf.set_x(pdf.l_margin)
     pdf.set_font(T.BODY_FAMILY, style="B", size=T.SIZE_H1)
     pdf.set_text_color(*T.INK)
@@ -159,7 +159,7 @@ def _render_toc(pdf: FPDF, outline):
         pdf.set_font(T.BODY_FAMILY, style="B" if section.level == 0 else "", size=T.SIZE_REFERENCE)
         link = pdf.add_link(page=section.page_number)
         label = f"{'    ' * section.level}{section.name}"
-        pdf.cell(pdf.w - pdf.l_margin - pdf.r_margin - 12, 5.8, label,
+        pdf.cell(pdf.usable_width - 12, 5.8, label,
                  align="L", link=link, new_x="RIGHT", new_y="TOP")
         pdf.cell(12, 5.8, str(section.page_number), align="R", link=link,
                  new_x="LMARGIN", new_y="NEXT")
@@ -300,8 +300,7 @@ def _render(result: ResearchResult, *, with_toc: bool, today: date) -> BriefPDF:
 
     for i, block in enumerate(blocks):
         if block.type == "heading":
-            level = min(block.level, 3)
-            _section_heading(pdf, f"{numberer.next(level)}  {block.text}", level)
+            _section_heading(pdf, f"{numberer.next(block.level)}  {block.text}", block.level)
         elif block.type == "bullet":
             _bullet(pdf, block)
             if ends_list(blocks, i):

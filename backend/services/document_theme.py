@@ -11,7 +11,7 @@ body, headings bold and decreasing by level, black text plus exactly one
 accent colour.
 """
 
-import os
+from pathlib import Path
 
 # --- page geometry (mm; fpdf2 is driven in mm) ------------------------------
 PAGE_FORMAT = "Letter"
@@ -21,7 +21,7 @@ FOOTER_OFFSET = -15               # from page bottom, for the page number
 # --- fonts ------------------------------------------------------------------
 # Noto Serif is OFL-licensed and ships with the repo, so the PDF embeds a font
 # we are actually allowed to redistribute (Georgia/Cambria/Times are not).
-FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "fonts")
+FONT_DIR = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 BODY_FAMILY = "NotoSerif"
 BODY_FACES = {"": "NotoSerif-Regular.ttf", "B": "NotoSerif-Bold.ttf",
               "I": "NotoSerif-Italic.ttf", "BI": "NotoSerif-BoldItalic.ttf"}
@@ -91,8 +91,8 @@ WORD_TOC_WORD_THRESHOLD = 4500
 
 def body_face_paths() -> dict:
     """style -> absolute .ttf path for the four body faces."""
-    return {style: os.path.join(FONT_DIR, name) for style, name in BODY_FACES.items()}
+    return {style: str(FONT_DIR / name) for style, name in BODY_FACES.items()}
 
 
 def fallback_face_path() -> str:
-    return os.path.join(FONT_DIR, FALLBACK_FACE)
+    return str(FONT_DIR / FALLBACK_FACE)

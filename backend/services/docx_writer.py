@@ -416,8 +416,7 @@ def build_docx(result: ResearchResult):
     figures = 0
     for i, block in enumerate(blocks):
         if block.type == "heading":
-            level = min(block.level, 3)
-            _section_heading(doc, f"{numberer.next(level)}  {block.text}", level)
+            _section_heading(doc, f"{numberer.next(block.level)}  {block.text}", block.level)
         elif block.type == "bullet":
             style = "List Number" if block.ordered else "List Bullet"
             if block.level >= 2:

@@ -325,8 +325,7 @@ def normalise_headings(blocks: list[Block]) -> list[Block]:
     The title is rendered on the title page (ResearchResult.title), so the
     model's copy of it is removed from the body. Models then write sections
     as '##' beneath it, which without re-basing numbers them 0.1, 0.2 — the
-    level-1 counter never
-    advances — and suppresses any styling reserved for a top-level heading.
+    level-1 counter never advances — and suppresses any styling reserved for a top-level heading.
     """
     # Only a lone level-1 heading is a title. A model that writes every section
     # as '#' has several, and dropping the first would lose "Executive Summary".

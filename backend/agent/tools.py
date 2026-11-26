@@ -1,7 +1,7 @@
 """
 Web search tool for the agent, backed by Tavily.
 
-Reliability comes first, in three layers, all deterministic and in code:
+Reliability comes first, in four layers, all deterministic and in code:
   1. Reach: the model can aim a search at an organisation's own site (the
      `domains` argument): who.int for WHO guidance, nasa.gov for NASA
      missions, a company's site for its leadership. A thin targeted search
@@ -27,7 +27,7 @@ import logging
 import re
 from collections.abc import Container
 from datetime import date
-from typing import Literal
+from typing import Literal, get_args
 from urllib.parse import urlparse
 
 from tavily import TavilyClient
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 Recency = Literal["day", "week", "month", "year"]
 Category = Literal["general", "news", "finance"]
 RECENCY_DAYS = {"day": 1, "week": 7, "month": 31, "year": 365}
-CATEGORIES = ("general", "news", "finance")
+CATEGORIES = get_args(Category)
 
 WEB_SEARCH_SCHEMA = {
     "type": "function",
@@ -70,8 +70,8 @@ WEB_SEARCH_SCHEMA = {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": (
-                        "Official sites to search within, e.g. [\"who.int\"], [\"nasa.gov\"], "
-                        "[\"nvidia.com\"]. Use it when the question concerns a specific "
+                        'Official sites to search within, e.g. ["who.int"], ["nasa.gov"], '
+                        '["nvidia.com"]. Use it when the question concerns a specific '
                         "organisation, agency, or company: its leadership, statements, policies, "
                         "data, or products. Bare domains only, at most 5. Omit for broad questions."
                     ),
@@ -210,8 +210,8 @@ def clean_domains(domains) -> tuple[str, ...]:
     if not isinstance(domains, list):
         return ()
     hosts: list[str] = []
-    for d in domains:
-        d = str(d).strip()
+    for raw in domains:
+        d = str(raw).strip()
         host = domain_of(d if "//" in d else f"//{d}")
         if "." in host and host not in hosts:
             hosts.append(host)
