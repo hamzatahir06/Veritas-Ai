@@ -160,7 +160,7 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
     }
 
     // Renders the brief already on screen with the same backend writers; needs no DB or Storage.
-    const renderFromBrief = () =>
+    const requestRender = () =>
       apiFetch(`/api/documents/${format}`, {
         method: 'POST',
         headers: jsonHeaders(),
@@ -171,6 +171,12 @@ export default function ResultView({ result, accessToken }: ResultViewProps) {
           provider: result.provider,
         }),
       })
+    // The host's proxy occasionally drops a render mid-request (a 5xx such as 520, or a reset
+    // connection), so one such failure is retried; a 4xx is a real answer and is not.
+    const renderFromBrief = async () => {
+      const first = await requestRender().catch(() => null)
+      return first && first.status < 500 ? first : requestRender()
+    }
 
     try {
       // Signed in: the stored copy first. If that can't be fetched (Supabase unreachable, sign-in

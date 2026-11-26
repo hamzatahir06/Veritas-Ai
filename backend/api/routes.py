@@ -5,9 +5,11 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, Response, StreamingResponse
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from agent.core import ResearchResult, run_research
+from agent import openalex, tools
+from agent.core import GEMINI_MAX_ITERATIONS, GROQ_MAX_ITERATIONS, ResearchResult, run_research
+from agent.toolset import MAX_PARALLEL_SEARCHES
 from core.auth import get_current_user, get_optional_user, get_supabase
 from services.brief_review import review as review_brief
 from services.document_common import document_filename, parse_markdown
@@ -47,11 +49,28 @@ class DocumentSource(BaseModel):
     venue: str = Field(default="", max_length=500)
     published: str = Field(default="", max_length=100)
 
+    @field_validator("*", mode="before")
+    @classmethod
+    def _null_is_empty(cls, value):
+        # A search result can carry null metadata (e.g. a page with no title);
+        # that is a missing field, not a reason to refuse the whole document.
+        return "" if value is None else value
+
+
+# The most sources one run can gather: every search turn of both providers at
+# full fan-out. Anything a real brief can hold must render; this only bounds
+# what a public request can hand the writers.
+MAX_DOCUMENT_SOURCES = (
+    (GEMINI_MAX_ITERATIONS + GROQ_MAX_ITERATIONS)
+    * MAX_PARALLEL_SEARCHES
+    * max(openalex.MAX_RESULTS, tools.MAX_RESULTS)
+)
+
 
 class DocumentRequest(BaseModel):
     topic: str = Field(max_length=MAX_TOPIC)
     markdown: str = Field(min_length=1, max_length=60_000)
-    sources: list[DocumentSource] = Field(default_factory=list, max_length=60)
+    sources: list[DocumentSource] = Field(default_factory=list, max_length=MAX_DOCUMENT_SOURCES)
     provider: str = Field(default="", max_length=100)
 
 
